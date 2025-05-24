@@ -87,9 +87,9 @@ export default function LandingFooter() {
       title: "Platform",
       links: [
         { label: "Earnings Prediction", href: "#prediction" },
-        { label: "Route Optimization", href: "#optimization" },
+        { label: "Analytics Dashboard", href: "#analytics" },
         { label: "Driver Insights", href: "#insights" },
-        { label: "Performance Analytics", href: "#analytics" }
+        { label: "Performance Metrics", href: "#metrics" }
       ]
     },
     {
@@ -97,6 +97,8 @@ export default function LandingFooter() {
       links: [
         { label: "GOTO Partnership", href: "#goto" },
         { label: "Earnings Calculator", href: "#calculator" },
+        { label: "Wellness Monitor", href: "#wellness" },
+        { label: "Financial Advisor", href: "#advisor" },
         { label: "Driver Community", href: "#community" },
         { label: "Success Stories", href: "#stories" }
       ]
@@ -230,8 +232,8 @@ export default function LandingFooter() {
                </h3>
                
                <p className="text-white/90 mb-8 max-w-2xl mx-auto">
-                 Join 50,000+ drivers who receive weekly earnings tips, route optimizations, 
-                 and exclusive insights to maximize their income.
+                 Join 50,000+ drivers who receive weekly earnings tips, wellness insights, 
+                 and exclusive analytics to maximize their income.
                </p>
                
                <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
@@ -267,7 +269,7 @@ export default function LandingFooter() {
                />
                <p className="text-slate-600 leading-relaxed">
                  Empowering GOTO drivers with AI-powered insights to predict earnings, 
-                 optimize routes, and build financial wellbeing for a sustainable livelihood.
+                 monitor wellness, and build financial wellbeing for a sustainable livelihood.
                </p>
              </div>
              

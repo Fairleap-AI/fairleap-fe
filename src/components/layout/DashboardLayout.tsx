@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   FiDollarSign,
-  FiMapPin,
   FiHeart,
   FiShield,
   FiLogOut,
@@ -28,7 +27,6 @@ import {
 const menuItems = [
   { icon: FiHome, label: "Dashboard", href: "/dashboard" },
   { icon: FiDollarSign, label: "Earnings Calculator", href: "/dashboard/earnings" },
-  { icon: FiMapPin, label: "Route Planner", href: "/dashboard/route-planner" },
   { icon: FiHeart, label: "Wellness Check", href: "/dashboard/wellness" },
   { icon: FiShield, label: "Financial Advisor", href: "/dashboard/financial-advisor" },
   { icon: FiPieChart, label: "Analytics", href: "/dashboard/analytics" },
@@ -131,16 +129,17 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
   const getAIResponse = (message: string): string => {
     const lowerMessage = message.toLowerCase();
     
-    if (lowerMessage.includes('penghasilan') || lowerMessage.includes('earning')) {
-      return 'Berdasarkan data Anda, prediksi penghasilan hari ini adalah Rp 325K. Untuk meningkatkan earnings, saya sarankan fokus di area Menteng pada jam 17:00-19:00. Area ini memiliki demand tinggi dengan multiplier 1.2x.';
-    } else if (lowerMessage.includes('rute') || lowerMessage.includes('route')) {
-      return 'Untuk optimasi rute hari ini, hindari Jl. Sudirman pada jam 16:00-18:00 karena macet. Alternatif terbaik: Jl. Rasuna Said → Kuningan → Menteng. Estimasi peningkatan income 15-20%.';
-    } else if (lowerMessage.includes('kesehatan') || lowerMessage.includes('wellness')) {
-      return 'Wellness score Anda saat ini 75% - kondisi baik! Untuk menjaga stamina optimal, jangan lupa istirahat 15 menit setiap 2 jam kerja dan minum air minimal 8 gelas per hari.';
-    } else if (lowerMessage.includes('bonus')) {
-      return 'Untuk mencapai bonus mingguan Rp 150K, Anda perlu 12 trip hari ini. Berdasarkan pola kerja Anda, ini sangat achievable! Focus di peak hours dan area high-demand.';
+    // Simple AI responses based on keywords
+    if (lowerMessage.includes('penghasilan') || lowerMessage.includes('earnings') || lowerMessage.includes('income')) {
+      return "Untuk optimasi penghasilan, gunakan fitur Earnings Calculator kami. Anda juga bisa lihat pola penghasilan harian di dashboard analytics.";
+    } else if (lowerMessage.includes('kesehatan') || lowerMessage.includes('wellness') || lowerMessage.includes('sehat')) {
+      return "Sangat bagus bahwa Anda peduli dengan kesehatan! Coba fitur Wellness Check untuk monitor kondisi harian dan dapatkan tips kesehatan yang dipersonalisasi.";
+    } else if (lowerMessage.includes('investasi') || lowerMessage.includes('financial') || lowerMessage.includes('uang')) {
+      return "Untuk perencanaan finansial dan investasi, saya sarankan konsultasi dengan Financial Advisor kami. Mereka bisa membantu strategi investasi yang sesuai profil Anda.";
+    } else if (lowerMessage.includes('analytics') || lowerMessage.includes('laporan') || lowerMessage.includes('data')) {
+      return "Anda bisa lihat analytics lengkap penghasilan, pola kerja, dan performa di menu Analytics. Data real-time tersedia 24/7.";
     } else {
-      return 'Terima kasih atas pertanyaannya! Saya bisa membantu dengan prediksi penghasilan, optimasi rute, wellness tips, dan strategi earnings. Ada yang spesifik ingin Anda tanyakan?';
+      return "Halo! Saya siap membantu Anda dengan informasi seputar penghasilan, kesehatan, investasi, dan analytics. Ada yang bisa saya bantu hari ini?";
     }
   };
 
@@ -358,10 +357,10 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setNewMessage('Rute mana yang terbaik saat ini?')}
+                    onClick={() => setNewMessage('Lihat analytics penghasilan saya')}
                     className="text-xs px-2 py-1 h-6"
                   >
-                    🗺️
+                    📊
                   </Button>
                   <Button
                     variant="outline"

@@ -189,24 +189,24 @@ const StepVisualization = ({ step }: { step: any }) => {
           <div className="bg-white rounded-xl p-6 shadow-lg w-full max-w-sm transform transition-all duration-500 hover:scale-105">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center animate-pulse">
-                <MapPin className="w-5 h-5 text-white" />
+                <BarChart3 className="w-5 h-5 text-white" />
               </div>
-              <span className="font-semibold text-slate-700">Smart Routes</span>
+              <span className="font-semibold text-slate-700">Smart Analytics</span>
             </div>
             <div className="space-y-3">
               <div className="bg-orange-50 rounded-lg p-3 transition-all duration-300 hover:bg-orange-100 transform hover:scale-105">
-                <div className="text-sm text-slate-600">Optimal Route</div>
-                <div className="text-orange-600 font-semibold animate-pulse">Kemang → Senayan</div>
-                <div className="text-xs text-orange-500">Est. earning: Rp 85K</div>
+                <div className="text-sm text-slate-600">Earnings Forecast</div>
+                <div className="text-orange-600 font-semibold animate-pulse">Rp 450K Today</div>
+                <div className="text-xs text-orange-500">85% of target reached</div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-slate-50 p-2 rounded text-xs transition-all duration-300 hover:bg-slate-100 transform hover:scale-105">
                   <div className="text-slate-600">Peak Hours</div>
-                  <div className="font-semibold animate-pulse">07:00-09:00</div>
+                  <div className="font-semibold animate-pulse">17:00-19:00</div>
                 </div>
                 <div className="bg-slate-50 p-2 rounded text-xs transition-all duration-300 hover:bg-slate-100 transform hover:scale-105">
-                  <div className="text-slate-600">Rest Alert</div>
-                  <div className="font-semibold animate-pulse">In 2 hours</div>
+                  <div className="text-slate-600">Wellness</div>
+                  <div className="font-semibold animate-pulse text-green-600">78%</div>
                 </div>
               </div>
             </div>
@@ -300,12 +300,12 @@ export default function HowItWorksSection() {
       step: 4,
       icon: <Target className="w-5 h-5" />,
       title: "Optimize",
-      subtitle: "Optimization & Recommendations",
-      description: "Receive personalized recommendations to maximize earnings while reducing fatigue with smart scheduling and optimal routes.",
+      subtitle: "Analytics & Recommendations",
+      description: "Receive personalized recommendations to maximize earnings while reducing fatigue with smart analytics and wellness monitoring.",
       features: [
         "Maximize earning potential",
-        "Reduce fatigue with smart scheduling",
-        "Optimal routes & peak hour alerts"
+        "Reduce fatigue with wellness insights",
+        "Peak hour analytics & health alerts"
       ],
       gradient: "from-orange-500 to-red-500",
     },
@@ -510,9 +510,9 @@ export default function HowItWorksSection() {
                         >
                           <div className="w-2 h-2 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full mt-2.5 group-hover:scale-125 transition-transform duration-300"></div>
                           <span className="text-slate-600 leading-relaxed">{feature}</span>
-            </div>
-          ))}
-        </div>
+                        </div>
+                      ))}
+                    </div>
 
                     {/* Progress */}
                     <div className={`pt-4 transition-all duration-500 ${
@@ -521,15 +521,15 @@ export default function HowItWorksSection() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-slate-500 font-medium">Progress</span>
                         <span className="text-sm text-emerald-600 font-bold">{(currentStep / steps.length * 100).toFixed(0)}%</span>
-                  </div>
+                      </div>
                       <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                         <div 
                           className="bg-gradient-to-r from-emerald-400 to-blue-500 h-2 rounded-full transition-all duration-700 ease-out"
                           style={{ width: `${currentStep / steps.length * 100}%` }}
                         ></div>
-            </div>
-          </div>
-        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Visualization dengan Wipe dari Kanan ke Kiri */}
                   <div 
@@ -542,7 +542,7 @@ export default function HowItWorksSection() {
                     style={{ transitionDelay: isTransitioning ? '0ms' : '200ms' }}
                   >
                     <StepVisualization step={currentStepData} />
-              </div>
+                  </div>
                 </div>
               </div>
             </CardContent>

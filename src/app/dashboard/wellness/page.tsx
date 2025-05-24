@@ -305,7 +305,7 @@ export default function WellnessCheckPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {riskFactors.map((factor, index) => (
                     <div key={factor.name} className="text-center">
-                      <div className="w-24 h-24 mx-auto mb-4">
+                      <div className="relative w-24 h-24 mx-auto mb-4">
                         <ResponsiveContainer width="100%" height="100%">
                           <PieChart>
                             <Pie
@@ -326,7 +326,8 @@ export default function WellnessCheckPage() {
                             </Pie>
                           </PieChart>
                         </ResponsiveContainer>
-                        <div className="relative -mt-12 text-center">
+                        {/* Centered text overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center">
                           <span className="text-lg font-bold" style={{ color: factor.color }}>
                             {factor.value}%
                           </span>

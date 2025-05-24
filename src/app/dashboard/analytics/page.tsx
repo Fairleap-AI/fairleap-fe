@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,12 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
+  hasCompletedWellnessToday,
+  getWellnessMetrics,
+  getOverallWellnessScore,
+  getWellnessStatus,
+  getWellnessRecommendations,
+  getRiskAssessment
+} from "@/lib/wellnessManager";
+import {
   FiPieChart,
   FiTrendingUp,
   FiTrendingDown,
   FiDollarSign,
   FiClock,
-  FiMapPin,
   FiActivity,
   FiTarget,
   FiCalendar,
@@ -24,7 +31,11 @@ import {
   FiThumbsUp,
   FiFilter,
   FiDownload,
-  FiRefreshCw
+  FiRefreshCw,
+  FiHeart,
+  FiShield,
+  FiBattery,
+  FiAlertTriangle
 } from "react-icons/fi";
 import {
   LineChart,
@@ -48,52 +59,52 @@ import {
 
 // Performance data over time
 const monthlyPerformance = [
-  { month: "Jan", earnings: 8500000, trips: 165, hours: 180, rating: 4.6, fuel: 1200000 },
-  { month: "Feb", earnings: 9200000, trips: 180, hours: 195, rating: 4.7, fuel: 1350000 },
-  { month: "Mar", earnings: 8800000, trips: 170, hours: 185, rating: 4.5, fuel: 1280000 },
-  { month: "Apr", earnings: 9500000, trips: 190, hours: 200, rating: 4.8, fuel: 1400000 },
-  { month: "Mei", earnings: 10200000, trips: 205, hours: 210, rating: 4.9, fuel: 1500000 },
-  { month: "Jun", earnings: 11100000, trips: 220, hours: 225, rating: 4.8, fuel: 1650000 }
+  { month: "Jan", earnings: 8500000, trips: 165, hours: 180, rating: 4.6, fuel: 1200000, wellness: 72 },
+  { month: "Feb", earnings: 9200000, trips: 180, hours: 195, rating: 4.7, fuel: 1350000, wellness: 75 },
+  { month: "Mar", earnings: 8800000, trips: 170, hours: 185, rating: 4.5, fuel: 1280000, wellness: 69 },
+  { month: "Apr", earnings: 9500000, trips: 190, hours: 200, rating: 4.8, fuel: 1400000, wellness: 78 },
+  { month: "Mei", earnings: 10200000, trips: 205, hours: 210, rating: 4.9, fuel: 1500000, wellness: 81 },
+  { month: "Jun", earnings: 11100000, trips: 220, hours: 225, rating: 4.8, fuel: 1650000, wellness: 79 }
 ];
 
 // Daily earnings pattern
 const dailyEarnings = [
-  { day: "Senin", earnings: 320000, trips: 12, avg_per_trip: 26667 },
-  { day: "Selasa", earnings: 295000, trips: 11, avg_per_trip: 26818 },
-  { day: "Rabu", earnings: 285000, trips: 10, avg_per_trip: 28500 },
-  { day: "Kamis", earnings: 310000, trips: 12, avg_per_trip: 25833 },
-  { day: "Jumat", earnings: 350000, trips: 14, avg_per_trip: 25000 },
-  { day: "Sabtu", earnings: 420000, trips: 16, avg_per_trip: 26250 },
-  { day: "Minggu", earnings: 380000, trips: 15, avg_per_trip: 25333 }
+  { day: "Senin", earnings: 320000, trips: 12, avg_per_trip: 26667, wellness: 75 },
+  { day: "Selasa", earnings: 295000, trips: 11, avg_per_trip: 26818, wellness: 72 },
+  { day: "Rabu", earnings: 285000, trips: 10, avg_per_trip: 28500, wellness: 70 },
+  { day: "Kamis", earnings: 310000, trips: 12, avg_per_trip: 25833, wellness: 73 },
+  { day: "Jumat", earnings: 350000, trips: 14, avg_per_trip: 25000, wellness: 78 },
+  { day: "Sabtu", earnings: 420000, trips: 16, avg_per_trip: 26250, wellness: 82 },
+  { day: "Minggu", earnings: 380000, trips: 15, avg_per_trip: 25333, wellness: 80 }
 ];
 
 // Hourly performance
 const hourlyData = [
-  { hour: "06", earnings: 45000, trips: 2, demand: 30 },
-  { hour: "07", earnings: 85000, trips: 3, demand: 65 },
-  { hour: "08", earnings: 120000, trips: 4, demand: 85 },
-  { hour: "09", earnings: 95000, trips: 3, demand: 60 },
-  { hour: "10", earnings: 75000, trips: 3, demand: 45 },
-  { hour: "11", earnings: 85000, trips: 3, demand: 50 },
-  { hour: "12", earnings: 110000, trips: 4, demand: 70 },
-  { hour: "13", earnings: 95000, trips: 3, demand: 65 },
-  { hour: "14", earnings: 80000, trips: 3, demand: 55 },
-  { hour: "15", earnings: 75000, trips: 3, demand: 50 },
-  { hour: "16", earnings: 95000, trips: 3, demand: 65 },
-  { hour: "17", earnings: 140000, trips: 5, demand: 90 },
-  { hour: "18", earnings: 155000, trips: 5, demand: 95 },
-  { hour: "19", earnings: 125000, trips: 4, demand: 80 },
-  { hour: "20", earnings: 95000, trips: 3, demand: 60 },
-  { hour: "21", earnings: 75000, trips: 3, demand: 45 }
+  { hour: "06", earnings: 45000, trips: 2, demand: 30, fatigue: 15 },
+  { hour: "07", earnings: 85000, trips: 3, demand: 65, fatigue: 25 },
+  { hour: "08", earnings: 120000, trips: 4, demand: 85, fatigue: 35 },
+  { hour: "09", earnings: 95000, trips: 3, demand: 60, fatigue: 40 },
+  { hour: "10", earnings: 75000, trips: 3, demand: 45, fatigue: 45 },
+  { hour: "11", earnings: 85000, trips: 3, demand: 50, fatigue: 50 },
+  { hour: "12", earnings: 110000, trips: 4, demand: 70, fatigue: 55 },
+  { hour: "13", earnings: 95000, trips: 3, demand: 65, fatigue: 60 },
+  { hour: "14", earnings: 80000, trips: 3, demand: 55, fatigue: 65 },
+  { hour: "15", earnings: 75000, trips: 3, demand: 50, fatigue: 70 },
+  { hour: "16", earnings: 95000, trips: 3, demand: 65, fatigue: 75 },
+  { hour: "17", earnings: 140000, trips: 5, demand: 90, fatigue: 80 },
+  { hour: "18", earnings: 155000, trips: 5, demand: 95, fatigue: 85 },
+  { hour: "19", earnings: 125000, trips: 4, demand: 80, fatigue: 80 },
+  { hour: "20", earnings: 95000, trips: 3, demand: 60, fatigue: 75 },
+  { hour: "21", earnings: 75000, trips: 3, demand: 45, fatigue: 70 }
 ];
 
-// Zone performance
-const zonePerformance = [
-  { zone: "Menteng", trips: 45, earnings: 1250000, avg_rating: 4.8, time_spent: 15 },
-  { zone: "Kelapa Gading", trips: 38, earnings: 980000, avg_rating: 4.6, time_spent: 12 },
-  { zone: "Senayan", trips: 42, earnings: 1100000, avg_rating: 4.7, time_spent: 14 },
-  { zone: "Kemang", trips: 35, earnings: 925000, avg_rating: 4.5, time_spent: 11 },
-  { zone: "PIK", trips: 28, earnings: 750000, avg_rating: 4.4, time_spent: 8 }
+// Wellness metrics trend
+const wellnessMetrics = [
+  { category: "Energy Level", current: 78, target: 85, trend: "+5%" },
+  { category: "Stress Level", current: 35, target: 30, trend: "-8%" },
+  { category: "Sleep Quality", current: 82, target: 85, trend: "+3%" },
+  { category: "Work-Life Balance", current: 72, target: 80, trend: "+12%" },
+  { category: "Physical Health", current: 85, target: 90, trend: "+7%" }
 ];
 
 // Performance metrics breakdown
@@ -112,21 +123,57 @@ const revenueBreakdown = [
   { category: "Incentives", amount: 425000, percentage: 3.7, color: "#8b5cf6" }
 ];
 
+// Financial planning data
+const savingsData = [
+  { month: "Jan", savings: 1700000, investments: 850000, expenses: 6000000 },
+  { month: "Feb", savings: 1840000, investments: 920000, expenses: 6440000 },
+  { month: "Mar", savings: 1760000, investments: 880000, expenses: 6160000 },
+  { month: "Apr", savings: 1900000, investments: 950000, expenses: 6650000 },
+  { month: "Mei", savings: 2040000, investments: 1020000, expenses: 7140000 },
+  { month: "Jun", savings: 2220000, investments: 1110000, expenses: 7770000 }
+];
+
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("6m");
   const [selectedMetric, setSelectedMetric] = useState("earnings");
+  const [hasWellnessData, setHasWellnessData] = useState(false);
+  const [wellnessScore, setWellnessScore] = useState(0);
+  const [realWellnessMetrics, setRealWellnessMetrics] = useState<any[]>([]);
+  const [riskData, setRiskData] = useState<any>(null);
+
+  useEffect(() => {
+    // Load wellness data
+    const hasWellness = hasCompletedWellnessToday();
+    setHasWellnessData(hasWellness);
+    
+    if (hasWellness) {
+      const score = getOverallWellnessScore();
+      const metrics = getWellnessMetrics();
+      const risk = getRiskAssessment();
+      
+      setWellnessScore(score);
+      setRealWellnessMetrics(metrics);
+      setRiskData(risk);
+    }
+  }, []);
 
   // Calculate key metrics
   const totalEarnings = monthlyPerformance.reduce((sum, month) => sum + month.earnings, 0);
   const totalTrips = monthlyPerformance.reduce((sum, month) => sum + month.trips, 0);
   const avgRating = monthlyPerformance.reduce((sum, month) => sum + month.rating, 0) / monthlyPerformance.length;
   const totalHours = monthlyPerformance.reduce((sum, month) => sum + month.hours, 0);
+  
+  // Use real wellness score if available, otherwise use mock data for non-wellness calculations
+  const avgWellness = hasWellnessData ? wellnessScore : 0;
 
   const currentMonth = monthlyPerformance[monthlyPerformance.length - 1];
   const previousMonth = monthlyPerformance[monthlyPerformance.length - 2];
   
   const earningsGrowth = ((currentMonth.earnings - previousMonth.earnings) / previousMonth.earnings) * 100;
   const tripsGrowth = ((currentMonth.trips - previousMonth.trips) / previousMonth.trips) * 100;
+  const wellnessGrowth = hasWellnessData ? 5.2 : 0; // Mock growth since we don't have historical data yet
+
+  const wellnessStatus = hasWellnessData ? getWellnessStatus(wellnessScore) : null;
 
   return (
     <DashboardLayout
@@ -197,7 +244,7 @@ export default function AnalyticsPage() {
                     <span>+{tripsGrowth.toFixed(1)}% dari bulan lalu</span>
                   </div>
                 </div>
-                <FiMapPin className="h-8 w-8 text-blue-200" />
+                <FiActivity className="h-8 w-8 text-blue-200" />
               </div>
             </CardContent>
           </Card>
@@ -206,14 +253,26 @@ export default function AnalyticsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm">Avg Rating</p>
-                  <p className="text-3xl font-bold">{avgRating.toFixed(1)}</p>
-                  <div className="flex items-center space-x-1 text-purple-100 text-xs">
-                    <FiStar className="h-3 w-3" />
-                    <span>Excellent performance</span>
-                  </div>
+                  <p className="text-purple-100 text-sm">Wellness Score</p>
+                  {hasWellnessData ? (
+                    <>
+                      <p className="text-3xl font-bold">{avgWellness}%</p>
+                      <div className="flex items-center space-x-1 text-purple-100 text-xs">
+                        <FiTrendingUp className="h-3 w-3" />
+                        <span>+{wellnessGrowth.toFixed(1)}% improvement</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold">--</p>
+                      <div className="flex items-center space-x-1 text-purple-100 text-xs">
+                        <FiAlertTriangle className="h-3 w-3" />
+                        <span>Assessment needed</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <FiStar className="h-8 w-8 text-purple-200" />
+                <FiHeart className="h-8 w-8 text-purple-200" />
               </div>
             </CardContent>
           </Card>
@@ -222,14 +281,14 @@ export default function AnalyticsPage() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-orange-100 text-sm">Total Hours</p>
-                  <p className="text-3xl font-bold">{totalHours}h</p>
+                  <p className="text-orange-100 text-sm">Avg Rating</p>
+                  <p className="text-3xl font-bold">{avgRating.toFixed(1)}</p>
                   <div className="flex items-center space-x-1 text-orange-100 text-xs">
-                    <FiClock className="h-3 w-3" />
-                    <span>Rp {Math.round(totalEarnings / totalHours / 1000)}K/hour</span>
+                    <FiStar className="h-3 w-3" />
+                    <span>Excellent performance</span>
                   </div>
                 </div>
-                <FiClock className="h-8 w-8 text-orange-200" />
+                <FiStar className="h-8 w-8 text-orange-200" />
               </div>
             </CardContent>
           </Card>
@@ -252,12 +311,12 @@ export default function AnalyticsPage() {
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="month" stroke="#64748b" />
                     <YAxis yAxisId="earnings" orientation="left" stroke="#64748b" tickFormatter={(value) => `${value / 1000000}M`} />
-                    <YAxis yAxisId="trips" orientation="right" stroke="#64748b" />
+                    <YAxis yAxisId="wellness" orientation="right" stroke="#64748b" />
                     <Tooltip 
                       formatter={(value: any, name: string) => {
                         if (name === 'earnings') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
                         if (name === 'trips') return [value, 'Trips'];
-                        if (name === 'rating') return [value, 'Rating'];
+                        if (name === 'wellness') return [`${value}%`, 'Wellness Score'];
                         return [value, name];
                       }}
                     />
@@ -272,16 +331,16 @@ export default function AnalyticsPage() {
                       dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
                     />
                     <Line 
-                      yAxisId="trips"
+                      yAxisId="wellness"
                       type="monotone" 
-                      dataKey="trips" 
-                      stroke="#3b82f6" 
+                      dataKey="wellness" 
+                      stroke="#8b5cf6" 
                       strokeWidth={3}
-                      name="Jumlah Trip"
-                      dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                      name="Wellness Score"
+                      dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 4 }}
                     />
                     <Line 
-                      yAxisId="trips"
+                      yAxisId="earnings"
                       type="monotone" 
                       dataKey="rating" 
                       stroke="#f59e0b" 
@@ -294,12 +353,12 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
-            {/* Daily Performance */}
+            {/* Daily Performance & Wellness */}
             <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <FiBarChart className="h-5 w-5 text-blue-600" />
-                  <span>Performance Harian</span>
+                  <span>Earnings & Wellness Harian</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -307,26 +366,28 @@ export default function AnalyticsPage() {
                   <BarChart data={dailyEarnings}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="day" stroke="#64748b" />
-                    <YAxis stroke="#64748b" tickFormatter={(value) => `${value / 1000}K`} />
+                    <YAxis yAxisId="earnings" orientation="left" stroke="#64748b" tickFormatter={(value) => `${value / 1000}K`} />
+                    <YAxis yAxisId="wellness" orientation="right" stroke="#64748b" />
                     <Tooltip 
                       formatter={(value: any, name: string) => {
                         if (name === 'earnings') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
-                        if (name === 'trips') return [value, 'Trips'];
+                        if (name === 'wellness') return [`${value}%`, 'Wellness'];
                         return [value, name];
                       }}
                     />
-                    <Bar dataKey="earnings" fill="#10b981" name="Pendapatan" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="earnings" dataKey="earnings" fill="#10b981" name="Pendapatan" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="wellness" dataKey="wellness" fill="#8b5cf6" name="Wellness" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
-            {/* Hourly Analysis */}
+            {/* Hourly Fatigue Analysis */}
             <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <FiClock className="h-5 w-5 text-purple-600" />
-                  <span>Analisis Per Jam</span>
+                  <FiBattery className="h-5 w-5 text-purple-600" />
+                  <span>Analisis Fatigue per Jam</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -338,27 +399,76 @@ export default function AnalyticsPage() {
                     <Tooltip 
                       formatter={(value: any, name: string) => {
                         if (name === 'earnings') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
-                        if (name === 'demand') return [`${value}%`, 'Demand'];
+                        if (name === 'fatigue') return [`${value}%`, 'Fatigue Level'];
                         return [value, name];
                       }}
                     />
                     <Area 
                       type="monotone" 
                       dataKey="earnings" 
-                      stroke="#8b5cf6" 
-                      fill="#8b5cf6" 
+                      stroke="#10b981" 
+                      fill="#10b981" 
                       fillOpacity={0.3}
                       name="Pendapatan"
                     />
                     <Area 
                       type="monotone" 
-                      dataKey="demand" 
-                      stroke="#f59e0b" 
-                      fill="#f59e0b" 
+                      dataKey="fatigue" 
+                      stroke="#ef4444" 
+                      fill="#ef4444" 
                       fillOpacity={0.2}
-                      name="Demand"
+                      name="Fatigue Level"
                     />
                   </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Financial Planning */}
+            <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <FiShield className="h-5 w-5 text-green-600" />
+                  <span>Financial Planning Trend</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={savingsData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="month" stroke="#64748b" />
+                    <YAxis stroke="#64748b" tickFormatter={(value) => `${value / 1000000}M`} />
+                    <Tooltip 
+                      formatter={(value: any, name: string) => {
+                        if (name === 'savings') return [`Rp ${value.toLocaleString('id-ID')}`, 'Tabungan'];
+                        if (name === 'investments') return [`Rp ${value.toLocaleString('id-ID')}`, 'Investasi'];
+                        if (name === 'expenses') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pengeluaran'];
+                        return [value, name];
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="savings" 
+                      stroke="#10b981" 
+                      strokeWidth={3}
+                      name="Tabungan"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="investments" 
+                      stroke="#3b82f6" 
+                      strokeWidth={3}
+                      name="Investasi"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="expenses" 
+                      stroke="#ef4444" 
+                      strokeWidth={3}
+                      name="Pengeluaran"
+                    />
+                  </LineChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
@@ -393,7 +503,7 @@ export default function AnalyticsPage() {
                     <span className="text-sm font-medium text-emerald-800">Achievement</span>
                   </div>
                   <p className="text-xs text-emerald-700">
-                    Top 10% driver dalam zona Menteng bulan ini! 🏆
+                    Top 10% driver berdasarkan wellness score bulan ini! Excellent work! 🏆
                   </p>
                 </div>
               </CardContent>
@@ -448,47 +558,92 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
-            {/* Zone Performance */}
+            {/* Wellness Metrics */}
             <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <FiMapPin className="h-5 w-5 text-orange-600" />
-                  <span>Performance per Zona</span>
+                  <FiHeart className="h-5 w-5 text-purple-600" />
+                  <span>Wellness Metrics</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {zonePerformance.map((zone, index) => (
-                  <div key={zone.zone} className="p-3 border rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-slate-800">{zone.zone}</h4>
-                      <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                        #{index + 1}
-                      </Badge>
-                    </div>
+                {hasWellnessData ? (
+                  <>
+                    {/* Real wellness metrics from assessment */}
+                    {realWellnessMetrics.map((metric) => (
+                      <div key={metric.name}>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700">{metric.name}</span>
+                          <span className="text-sm text-slate-500">{metric.value}%</span>
+                        </div>
+                        <Progress value={metric.value} className="h-2" />
+                      </div>
+                    ))}
                     
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <p className="text-slate-500">Trips</p>
-                        <p className="font-bold text-slate-700">{zone.trips}</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500">Earnings</p>
-                        <p className="font-bold text-emerald-600">Rp {(zone.earnings / 1000000).toFixed(1)}M</p>
-                      </div>
-                      <div>
-                        <p className="text-slate-500">Rating</p>
-                        <div className="flex items-center space-x-1">
-                          <FiStar className="h-3 w-3 text-yellow-500" />
-                          <p className="font-medium text-slate-700">{zone.avg_rating}</p>
+                    <Separator className="my-4" />
+                    
+                    {/* Risk Assessment */}
+                    {riskData && (
+                      <div className="p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-red-200">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <FiShield className="h-4 w-4 text-red-600" />
+                          <span className="text-sm font-medium text-red-800">Risk Assessment</span>
+                        </div>
+                        <div className="space-y-2">
+                          {riskData.risks?.map((risk: any, index: number) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <div className={`w-2 h-2 rounded-full ${
+                                risk.level === 'High' ? 'bg-red-500' : 
+                                risk.level === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}></div>
+                              <span className="text-xs text-slate-700">{risk.category}: {risk.level}</span>
+                            </div>
+                          ))}
+                          <p className="text-xs text-red-700 mt-2">
+                            Overall Risk: <strong>{riskData.overallRisk}</strong>
+                          </p>
                         </div>
                       </div>
-                      <div>
-                        <p className="text-slate-500">Time</p>
-                        <p className="font-medium text-slate-700">{zone.time_spent}h</p>
+                    )}
+
+                    {/* Wellness recommendations */}
+                    <div className="p-3 bg-purple-50 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <FiTarget className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm font-medium text-purple-800">Today's Recommendation</span>
                       </div>
+                      <p className="text-xs text-purple-700">
+                        {getWellnessRecommendations(wellnessScore)[0]}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  // Show assessment prompt if no data
+                  <div className="text-center space-y-4">
+                    <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                      <FiHeart className="h-12 w-12 text-purple-400 mx-auto mb-3" />
+                      <h3 className="font-semibold text-slate-800 mb-2">
+                        Wellness Assessment Required
+                      </h3>
+                      <p className="text-sm text-slate-600 mb-4">
+                        Complete your daily wellness assessment to see detailed health metrics and risk analysis.
+                      </p>
+                      <Button
+                        onClick={() => window.location.href = '/dashboard/wellness'}
+                        className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                      >
+                        <FiHeart className="mr-2 h-4 w-4" />
+                        Start Assessment
+                      </Button>
+                    </div>
+                    
+                    <div className="p-3 bg-yellow-50 rounded-lg">
+                      <p className="text-xs text-yellow-800">
+                        ⚡ <strong>Tip:</strong> Daily assessment takes only 2 minutes and provides valuable health insights.
+                      </p>
                     </div>
                   </div>
-                ))}
+                )}
               </CardContent>
             </Card>
 
@@ -502,32 +657,50 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="p-3 bg-blue-50 rounded-lg">
-                  <h4 className="text-sm font-medium text-blue-800 mb-1">📈 Best Day</h4>
+                  <h4 className="text-sm font-medium text-blue-800 mb-1">📈 Best Performance Day</h4>
                   <p className="text-xs text-blue-700">
-                    Sabtu adalah hari terbaik dengan rata-rata Rp 420K
+                    Sabtu adalah hari terbaik dengan rata-rata Rp 420K{hasWellnessData ? ' dan wellness 82%' : ''}
                   </p>
                 </div>
                 
                 <div className="p-3 bg-green-50 rounded-lg">
                   <h4 className="text-sm font-medium text-green-800 mb-1">⏰ Peak Hours</h4>
                   <p className="text-xs text-green-700">
-                    17:00-18:00 jam tersibuk dengan Rp 155K/jam
+                    17:00-18:00 jam tersibuk dengan Rp 155K/jam{hasWellnessData ? ', tapi fatigue level tinggi (85%)' : ''}
                   </p>
                 </div>
                 
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <h4 className="text-sm font-medium text-purple-800 mb-1">🎯 Top Zone</h4>
-                  <p className="text-xs text-purple-700">
-                    Menteng memberikan earnings tertinggi Rp 1.25M
-                  </p>
-                </div>
+                {hasWellnessData ? (
+                  <div className="p-3 bg-purple-50 rounded-lg">
+                    <h4 className="text-sm font-medium text-purple-800 mb-1">❤️ Wellness Trend</h4>
+                    <p className="text-xs text-purple-700">
+                      Wellness score Anda {wellnessScore}% - {wellnessStatus?.text}. {wellnessScore >= 75 ? 'Pertahankan kondisi baik ini!' : 'Perlu perhatian lebih pada kesehatan.'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-gray-50 rounded-lg">
+                    <h4 className="text-sm font-medium text-gray-800 mb-1">❤️ Wellness Assessment</h4>
+                    <p className="text-xs text-gray-700">
+                      Lengkapi assessment wellness untuk mendapatkan insights kesehatan yang personal.
+                    </p>
+                  </div>
+                )}
                 
                 <div className="p-3 bg-orange-50 rounded-lg">
-                  <h4 className="text-sm font-medium text-orange-800 mb-1">⭐ Rating</h4>
+                  <h4 className="text-sm font-medium text-orange-800 mb-1">💰 Savings Growth</h4>
                   <p className="text-xs text-orange-700">
-                    Rating meningkat 0.3 poin dalam 6 bulan terakhir
+                    Tabungan meningkat 30% dalam 6 bulan. Investasi konsisten setiap bulan.
                   </p>
                 </div>
+
+                {hasWellnessData && riskData && riskData.overallRisk !== 'Low' && (
+                  <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <h4 className="text-sm font-medium text-yellow-800 mb-1">⚠️ Health Alert</h4>
+                    <p className="text-xs text-yellow-700">
+                      Risk level {riskData.overallRisk}. {riskData.overallRisk === 'High' ? 'Pertimbangkan break lebih sering dan konsultasi kesehatan.' : 'Monitor kondisi kesehatan secara berkala.'}
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
