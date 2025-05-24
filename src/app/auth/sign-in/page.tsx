@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/form";
 import { FcGoogle } from "react-icons/fc";
 import { IoEyeOutline, IoEyeOffOutline, IoArrowBack } from "react-icons/io5";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -31,6 +33,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function SignInPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { addToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -43,18 +47,49 @@ export default function SignInPage() {
     },
   });
 
+  useEffect(() => {
+    const emailFromParams = searchParams.get("email");
+    const passwordFromParams = searchParams.get("password");
+
+    if (emailFromParams) {
+      form.setValue("email", emailFromParams);
+    }
+    if (passwordFromParams) {
+      form.setValue("password", passwordFromParams);
+    }
+  }, [searchParams, form]);
+
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      console.log("Login data:", data);
+      const response = await apiClient.login(data.email, data.password);
 
-      // TODO: Implement actual login logic here
-      // For now, just simulate success and redirect
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1000);
-    } catch (error) {
+      if (response.status === "success") {
+        localStorage.setItem("authToken", response.data.token);
+
+        addToast({
+          type: "success",
+          title: "Login Successful",
+          description: "Welcome back! Redirecting to your dashboard...",
+        });
+
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1000);
+      } else {
+        addToast({
+          type: "error",
+          title: "Login Failed",
+          description: response.message,
+        });
+      }
+    } catch (error: any) {
       console.error("Login failed:", error);
+      addToast({
+        type: "error",
+        title: "Login Failed",
+        description: "An error occurred during login. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +138,7 @@ export default function SignInPage() {
               Enter your email and password to access your account
             </p>
           </div>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -204,6 +240,7 @@ export default function SignInPage() {
               </Button>
             </form>
           </Form>
+
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -226,6 +263,7 @@ export default function SignInPage() {
               </Button>
             </div>
           </div>
+
           <p className="mt-10 text-center text-sm text-gray-600">
             Don&apos;t have an account?{" "}
             <Link

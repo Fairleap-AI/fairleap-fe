@@ -1,8 +1,244 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { IoArrowBack } from "react-icons/io5";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: "Invalid email address." }),
+});
+
+const changePasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(8, { message: "Password must be at least 8 characters." }),
+    confirmPassword: z
+      .string()
+      .min(1, { message: "Please confirm your password." }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
+
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
 export default function ForgotPasswordPage() {
+  const searchParams = useSearchParams();
+  const { addToast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+
+  const token = searchParams.get("token");
+  const isChangePassword = !!token;
+
+  const forgotPasswordForm = useForm<ForgotPasswordFormValues>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const changePasswordForm = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const onForgotPasswordSubmit = async (data: ForgotPasswordFormValues) => {
+    setIsLoading(true);
+    try {
+      const response = await apiClient.forgotPassword(data.email);
+
+      if (response.status === "success") {
+        setEmailSent(true);
+        addToast({
+          type: "success",
+          title: "Reset Email Sent",
+          description:
+            "Please check your inbox for password reset instructions.",
+        });
+      } else {
+        addToast({
+          type: "error",
+          title: "Error",
+          description: response.message,
+        });
+      }
+    } catch (error: any) {
+      console.error("Forgot password failed:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        description: "Failed to send reset email. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onChangePasswordSubmit = async (data: ChangePasswordFormValues) => {
+    if (!token) return;
+
+    setIsLoading(true);
+    try {
+      const response = await apiClient.changePassword(data.password, token);
+
+      if (response.status === "success") {
+        addToast({
+          type: "success",
+          title: "Password Changed",
+          description:
+            "Your password has been successfully changed. You can now sign in.",
+        });
+
+        // Redirect to sign-in after a delay
+        setTimeout(() => {
+          window.location.href = "/auth/sign-in";
+        }, 2000);
+      } else {
+        addToast({
+          type: "error",
+          title: "Error",
+          description: response.message,
+        });
+      }
+    } catch (error: any) {
+      console.error("Change password failed:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        description: "Failed to change password. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isChangePassword) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full space-y-8">
+          <div className="bg-card p-8 rounded-lg border shadow-sm">
+            <Link
+              href="/auth/sign-in"
+              className="inline-flex items-center text-primary hover:text-primary/80 transition-colors mb-8"
+            >
+              <IoArrowBack className="h-5 w-5 mr-2" />
+              Back to Sign In
+            </Link>
+
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold text-foreground">
+                Change Password
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Enter your new password
+              </p>
+            </div>
+
+            <Form {...changePasswordForm}>
+              <form
+                onSubmit={changePasswordForm.handleSubmit(
+                  onChangePasswordSubmit
+                )}
+                className="space-y-6"
+              >
+                <FormField
+                  control={changePasswordForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Enter new password"
+                          disabled={isLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={changePasswordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm New Password</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Confirm new password"
+                          disabled={isLoading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button type="submit" disabled={isLoading} className="w-full">
+                  {isLoading ? "Changing Password..." : "Change Password"}
+                </Button>
+              </form>
+            </Form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full space-y-8">
+          <div className="bg-card p-8 rounded-lg border shadow-sm text-center">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-foreground">Email Sent</h1>
+              <p className="text-muted-foreground mt-2">
+                We've sent a password reset link to your email address. Please
+                check your inbox and follow the instructions.
+              </p>
+            </div>
+
+            <Link
+              href="/auth/sign-in"
+              className="inline-flex items-center text-primary hover:text-primary/80 transition-colors"
+            >
+              <IoArrowBack className="h-5 w-5 mr-2" />
+              Back to Sign In
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
@@ -16,35 +252,44 @@ export default function ForgotPasswordPage() {
           </Link>
 
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Reset Password</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Reset Password
+            </h1>
             <p className="text-muted-foreground mt-2">
-              Enter your email address and we'll send you a link to reset your password
+              Enter your email address and we'll send you a link to reset your
+              password
             </p>
           </div>
 
-          <form className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                placeholder="Enter your email"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+          <Form {...forgotPasswordForm}>
+            <form
+              onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)}
+              className="space-y-6"
             >
-              Send Reset Link
-            </button>
-          </form>
+              <FormField
+                control={forgotPasswordForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="Enter your email"
+                        disabled={isLoading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Sending..." : "Send Reset Link"}
+              </Button>
+            </form>
+          </Form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
@@ -61,4 +306,4 @@ export default function ForgotPasswordPage() {
       </div>
     </div>
   );
-} 
+}
