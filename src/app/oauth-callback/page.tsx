@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
 
-export default function OAuthCallbackPage() {
+function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToast } = useToast();
@@ -104,5 +104,33 @@ export default function OAuthCallbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex h-screen w-screen items-center justify-center bg-white">
+      <div className="flex flex-col items-center space-y-8">
+        <div className="relative">
+          <img
+            src="/icon-only.png"
+            alt="FairLeap"
+            className="h-24 w-24 animate-pulse"
+          />
+        </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-primary mb-2">Loading...</h1>
+          <p className="text-gray-600">Please wait while we load the page.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function OAuthCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <OAuthCallbackContent />
+    </Suspense>
   );
 }

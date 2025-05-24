@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -41,7 +41,7 @@ const changePasswordSchema = z
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordContent() {
   const searchParams = useSearchParams();
   const { addToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
           description: response.message,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Forgot password failed:", error);
       addToast({
         type: "error",
@@ -123,7 +123,7 @@ export default function ForgotPasswordPage() {
           description: response.message,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Change password failed:", error);
       addToast({
         type: "error",
@@ -221,7 +221,7 @@ export default function ForgotPasswordPage() {
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-foreground">Email Sent</h1>
               <p className="text-muted-foreground mt-2">
-                We've sent a password reset link to your email address. Please
+                We&apos;ve sent a password reset link to your email address. Please
                 check your inbox and follow the instructions.
               </p>
             </div>
@@ -253,11 +253,10 @@ export default function ForgotPasswordPage() {
 
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-foreground">
-              Reset Password
+              Forgot Password?
             </h1>
             <p className="text-muted-foreground mt-2">
-              Enter your email address and we'll send you a link to reset your
-              password
+              Don&apos;t worry, we&apos;ll send you reset instructions.
             </p>
           </div>
 
@@ -275,7 +274,7 @@ export default function ForgotPasswordPage() {
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder="Enter your email address"
                         disabled={isLoading}
                         {...field}
                       />
@@ -286,24 +285,33 @@ export default function ForgotPasswordPage() {
               />
 
               <Button type="submit" disabled={isLoading} className="w-full">
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading ? "Sending..." : "Send Reset Email"}
               </Button>
             </form>
           </Form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Remember your password?{" "}
-              <Link
-                href="/auth/sign-in"
-                className="text-primary hover:text-primary/80 font-medium"
-              >
-                Sign in
-              </Link>
-            </p>
-          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="max-w-md w-full space-y-8">
+        <div className="bg-card p-8 rounded-lg border shadow-sm text-center">
+          <h1 className="text-2xl font-bold text-primary mb-2">Loading...</h1>
+          <p className="text-muted-foreground">Please wait while we load the page.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ForgotPasswordContent />
+    </Suspense>
   );
 }

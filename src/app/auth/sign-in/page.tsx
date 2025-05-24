@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -31,7 +31,7 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-export default function SignInPage() {
+function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToast } = useToast();
@@ -98,6 +98,7 @@ export default function SignInPage() {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+  
   const handleGoogleLogin = () => {
     const googleOAuthUrl = apiClient.getGoogleOAuthUrl();
     window.location.href = googleOAuthUrl;
@@ -209,29 +210,28 @@ export default function SignInPage() {
                   control={form.control}
                   name="rememberMe"
                   render={({ field }) => (
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="rememberMe"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isLoading}
-                        className="border-border text-primary focus:ring-primary"
-                      />
-                      <label
-                        htmlFor="rememberMe"
-                        className="text-sm font-medium text-gray-600 cursor-pointer"
-                      >
-                        Remember me
-                      </label>
-                    </div>
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isLoading}
+                          className="border-border text-primary focus:ring-primary"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-sm font-medium text-gray-600 cursor-pointer">
+                          Remember me
+                        </FormLabel>
+                      </div>
+                    </FormItem>
                   )}
                 />
-
                 <Link
                   href="/auth/forgot-password"
-                  className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                  className="text-sm text-primary hover:text-primary/80 transition-colors"
                 >
-                  Forgot Password?
+                  Forgot password?
                 </Link>
               </div>
 
@@ -256,7 +256,6 @@ export default function SignInPage() {
             </div>
 
             <div className="mt-6">
-              {" "}
               <Button
                 variant="outline"
                 disabled={isLoading}
@@ -264,9 +263,9 @@ export default function SignInPage() {
                 className="w-full border border-border rounded-md h-12 hover:bg-muted/10 transition-colors text-primary font-medium hover:text-primary/80"
                 type="button"
               >
-                {" "}
-                <FcGoogle className="mr-2 h-4 w-4" /> Sign In with Google{" "}
-              </Button>{" "}
+                <FcGoogle className="mr-2 h-4 w-4" />
+                Sign In with Google
+              </Button>
             </div>
           </div>
 
@@ -282,5 +281,33 @@ export default function SignInPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex h-screen w-screen items-center justify-center bg-white">
+      <div className="flex flex-col items-center space-y-8">
+        <div className="relative">
+          <img
+            src="/icon-only.png"
+            alt="FairLeap"
+            className="h-24 w-24 animate-pulse"
+          />
+        </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-primary mb-2">Loading...</h1>
+          <p className="text-gray-600">Please wait while we load the page.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <SignInContent />
+    </Suspense>
   );
 }

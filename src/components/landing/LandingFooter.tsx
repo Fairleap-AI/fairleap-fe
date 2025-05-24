@@ -288,7 +288,7 @@ export default function LandingFooter() {
            </div>
 
                      {/* Footer Sections */}
-           {footerSections.map((section, index) => (
+           {footerSections.map((section) => (
              <div key={section.title} className="space-y-4">
                <h4 className="font-semibold text-slate-800 text-lg">{section.title}</h4>
                <ul className="space-y-3">
@@ -310,7 +310,7 @@ export default function LandingFooter() {
         {/* Social Links */}
         <div ref={socialLinksRef} className="flex justify-center mb-8">
           <div className="flex space-x-4">
-            {socialLinks.map((social, index) => (
+            {socialLinks.map((social) => (
               <a
                 key={social.label}
                 href={social.href}

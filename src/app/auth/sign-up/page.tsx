@@ -50,11 +50,7 @@ export default function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
-  const [emailVerified, setEmailVerified] = useState(false);
-  const [verifyingEmail, setVerifyingEmail] = useState(false);
-  const [verificationToken, setVerificationToken] = useState<string | null>(
-    null
-  );
+    const [emailVerified, setEmailVerified] = useState(false);  const [verifyingEmail, setVerifyingEmail] = useState(false);  const [_verificationToken, setVerificationToken] = useState<string | null>(    null  );
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
