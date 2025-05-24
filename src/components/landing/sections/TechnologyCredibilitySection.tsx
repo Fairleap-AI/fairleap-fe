@@ -1,45 +1,137 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 import {
-  FiShield,
   FiCpu,
-  FiCloud,
-  FiLock,
-  FiGlobe,
-  FiZap,
+  FiMessageSquare,
+  FiBarChart,
+  FiClock,
+  FiShield,
+  FiServer,
 } from "react-icons/fi";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function TechnologyCredibilitySection() {
-  const technologies = [
-    { name: "Advanced ML Algorithms", icon: <FiCpu className="w-6 h-6" /> },
-    { name: "Cloud Infrastructure", icon: <FiCloud className="w-6 h-6" /> },
-    { name: "Enterprise Security", icon: <FiLock className="w-6 h-6" /> },
-    { name: "Global CDN", icon: <FiGlobe className="w-6 h-6" /> },
-    { name: "Real-time Processing", icon: <FiZap className="w-6 h-6" /> },
-    { name: "ISO 27001 Compliant", icon: <FiShield className="w-6 h-6" /> },
-  ];
+  const sectionRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const logosRef = useRef<HTMLDivElement>(null);
+  const foundationsRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
 
-  const certifications = [
-    "ISO 27001",
-    "SOC 2 Type II",
-    "GDPR Compliant",
-    "HIPAA Ready",
-    "FedRAMP",
-    "PCI DSS",
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top 80%",
+          end: "bottom 20%",
+          toggleActions: "play none none reverse",
+        },
+      });
+
+      // Animate title
+      tl.fromTo(
+        titleRef.current,
+        { opacity: 0, y: 50 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" }
+      );
+
+      // Animate logos with stagger
+      tl.fromTo(
+        logosRef.current?.children || [],
+        { opacity: 0, y: 30, scale: 0.8 },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          stagger: 0.2,
+          ease: "back.out(1.7)",
+        },
+        "-=0.4"
+      );
+
+      // Animate foundation cards
+      tl.fromTo(
+        foundationsRef.current?.children || [],
+        { opacity: 0, y: 40 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+          stagger: 0.1,
+          ease: "power2.out",
+        },
+        "-=0.3"
+      );
+
+      // Animate stats
+      tl.fromTo(
+        statsRef.current?.children || [],
+        { opacity: 0, scale: 0.8 },
+        {
+          opacity: 1,
+          scale: 1,
+          duration: 0.5,
+          stagger: 0.1,
+          ease: "back.out(1.7)",
+        },
+        "-=0.2"
+      );
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  const techFoundations = [
+    {
+      icon: <FiCpu className="w-6 h-6" />,
+      title: "Machine Learning Models",
+      description: "Smart predictions from behavioral data",
+    },
+    {
+      icon: <FiMessageSquare className="w-6 h-6" />,
+      title: "Natural Language Processing",
+      description: "Understands driver queries in natural language",
+    },
+    {
+      icon: <FiBarChart className="w-6 h-6" />,
+      title: "Predictive Analytics",
+      description: "Forecasts earnings, trends, and patterns",
+    },
+    {
+      icon: <FiClock className="w-6 h-6" />,
+      title: "Real-time Data Processing",
+      description: "Instant insights and system responsiveness",
+    },
+    {
+      icon: <FiShield className="w-6 h-6" />,
+      title: "Bank-grade Security",
+      description: "Encrypted data storage and transfer",
+    },
+    {
+      icon: <FiServer className="w-6 h-6" />,
+      title: "99.9% Uptime SLA",
+      description: "Reliable infrastructure with enterprise-grade availability",
+    },
   ];
 
   return (
-    <section id="technology" className="py-20 bg-background">
+    <section ref={sectionRef} id="technology" className="py-20 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center mb-16">
+        <div ref={titleRef} className="max-w-4xl mx-auto text-center mb-16">
           <Badge variant="outline" className="mb-4">
             Technology
           </Badge>
           <h2 className="text-3xl md:text-5xl font-bold mb-6">
-            Enterprise-Grade <span className="text-primary">Technology</span>
+            Backed by{" "}
+            <span className="text-primary">World-Class Tech Stack</span>
           </h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
             Built on cutting-edge infrastructure with the highest security
@@ -47,41 +139,62 @@ export default function TechnologyCredibilitySection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {technologies.map((tech, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6 text-center">
-                <div className="text-primary mb-4 flex justify-center">
-                  {tech.icon}
-                </div>
-                <h3 className="font-semibold">{tech.name}</h3>
-              </CardContent>
-            </Card>
-          ))}
+        {/* Logos Section */}
+        <div ref={logosRef} className="flex justify-center items-center gap-12 mb-16">
+          <div className="grayscale opacity-60 hover:opacity-80 transition-opacity">
+            <Image
+              src="/icons/1.png"
+              alt="Technology Logo 1"
+              width={120}
+              height={120}
+              className="object-contain"
+            />
+          </div>
+          <div className="grayscale opacity-60 hover:opacity-80 transition-opacity">
+            <Image
+              src="/icons/2.png"
+              alt="Technology Logo 2"
+              width={120}
+              height={120}
+              className="object-contain"
+            />
+          </div>
+          <div className="grayscale opacity-60 hover:opacity-80 transition-opacity">
+            <Image
+              src="/icons/3.png"
+              alt="Technology Logo 3"
+              width={120}
+              height={120}
+              className="object-contain"
+            />
+          </div>
         </div>
 
+        {/* Key Technology Foundations */}
         <div className="text-center mb-16">
           <h3 className="text-2xl font-bold mb-8">
-            Certifications & Compliance
+            Key Technology Foundations
           </h3>
-          <div className="flex flex-wrap justify-center gap-4">
-            {certifications.map((cert, index) => (
-              <Badge key={index} variant="secondary" className="px-4 py-2">
-                {cert}
-              </Badge>
+          <div ref={foundationsRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {techFoundations.map((tech, index) => (
+              <Card key={index} className="hover:shadow-lg transition-shadow">
+                <CardContent className="p-6 text-center">
+                  <div className="text-primary mb-4 flex justify-center">
+                    {tech.icon}
+                  </div>
+                  <h4 className="font-semibold mb-2">{tech.title}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {tech.description}
+                  </p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
 
-        <div className="bg-card rounded-2xl p-8 border text-center">
-          <h3 className="text-2xl font-bold mb-4">
-            Trusted by Industry Leaders
-          </h3>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Fortune 500 companies and government agencies rely on our platform
-            for their most critical AI applications.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        {/* Stats Section */}
+        <div className="text-center">
+          <div ref={statsRef} className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             <div>
               <div className="text-3xl font-bold text-primary">99.99%</div>
               <div className="text-sm text-muted-foreground">Uptime SLA</div>
