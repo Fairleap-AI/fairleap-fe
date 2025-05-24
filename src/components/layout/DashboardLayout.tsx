@@ -16,7 +16,6 @@ import {
   FiBell,
   FiMenu,
   FiX,
-  FiMessageCircle,
   FiSend,
   FiHome,
   FiPieChart,
@@ -224,7 +223,7 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
               onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
               className="text-emerald-600"
             >
-              <FiMessageCircle className="h-4 w-4" />
+              <img src="/Chatbot.png" alt="Chatbot" className="h-6 w-6" />
             </Button>
           </div>
         </header>
@@ -242,9 +241,7 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
             {/* Chatbot Header */}
             <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 flex-shrink-0">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <FiMessageCircle className="h-4 w-4 text-emerald-600" />
-                </div>
+                <img src="/Chatbot.png" alt="Chatbot" className="h-8 w-8" />
                 <span className="font-semibold text-slate-800">AI Assistant</span>
               </div>
               <Button
@@ -344,7 +341,7 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
           className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 shadow-lg z-50 flex items-center justify-center"
           size="sm"
         >
-          <FiMessageCircle className="h-6 w-6 text-white" />
+          <img src="/Chatbot.png" alt="Chatbot" className="h-8 w-8" />
         </Button>
       )}
     </div>
