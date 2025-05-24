@@ -57,6 +57,14 @@ import {
   formatCurrency,
   ZoneData 
 } from "@/lib/routeOptimization";
+import {
+  hasCompletedWellnessToday,
+  getWellnessMetrics,
+  getOverallWellnessScore,
+  getWellnessStatus,
+  getWellnessRecommendations,
+  getTimeUntilNextAssessment
+} from "@/lib/wellnessManager";
 
 // Mock data untuk demo
 const earningsData = [
@@ -166,6 +174,9 @@ export default function DashboardPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
   const [timeBasedRecommendations, setTimeBasedRecommendations] = useState<ZoneData[]>([]);
+  const [hasWellnessData, setHasWellnessData] = useState(false);
+  const [wellnessScore, setWellnessScore] = useState(0);
+  const [wellnessMetrics, setWellnessMetrics] = useState<any[]>([]);
 
   useEffect(() => {
     // Update time
@@ -180,8 +191,21 @@ export default function DashboardPage() {
     const recommendations = getTimeBasedRecommendations(jakartaZones, currentHour);
     setTimeBasedRecommendations(recommendations);
     
+    // Load wellness data
+    const hasWellness = hasCompletedWellnessToday();
+    setHasWellnessData(hasWellness);
+    
+    if (hasWellness) {
+      const score = getOverallWellnessScore();
+      const metrics = getWellnessMetrics();
+      setWellnessScore(score);
+      setWellnessMetrics(metrics);
+    }
+    
     return () => clearInterval(timer);
   }, []);
+
+  const wellnessStatus = getWellnessStatus(wellnessScore);
 
   return (
     <DashboardLayout
@@ -248,8 +272,12 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm">Wellness Score</p>
-                  <p className="text-3xl font-bold">75%</p>
-                  <p className="text-purple-100 text-xs">Good condition</p>
+                  <p className="text-3xl font-bold">
+                    {hasWellnessData ? `${wellnessScore}%` : "N/A"}
+                  </p>
+                  <p className="text-purple-100 text-xs">
+                    {hasWellnessData ? wellnessStatus.text : "Assessment needed"}
+                  </p>
                 </div>
                 <div className="bg-white/20 p-3 rounded-xl">
                   <FiHeart className="h-8 w-8" />
@@ -412,24 +440,83 @@ export default function DashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {wellnessData.map((item) => (
-                  <div key={item.name} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-slate-700">{item.name}</span>
-                      <span className="text-sm text-slate-500">{item.value}%</span>
+                {hasWellnessData ? (
+                  // Show wellness data if completed
+                  <>
+                    {/* Overall Score */}
+                    <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                      <div className="flex items-center justify-center space-x-2 mb-2">
+                        <span className="text-2xl">{wellnessStatus.icon}</span>
+                        <span className="font-bold text-lg" style={{ color: wellnessStatus.color }}>
+                          {wellnessScore}%
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600">{wellnessStatus.text}</p>
                     </div>
-                    <Progress value={item.value} className="h-2" />
+
+                    {/* Wellness Metrics */}
+                    {wellnessMetrics.map((item) => (
+                      <div key={item.name} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-slate-700">{item.name}</span>
+                          <span className="text-sm text-slate-500">{item.value}%</span>
+                        </div>
+                        <Progress value={item.value} className="h-2" />
+                      </div>
+                    ))}
+                    
+                    <Separator className="my-4" />
+                    
+                    <div className="bg-emerald-50 p-4 rounded-lg">
+                      <p className="text-sm font-medium text-emerald-800 mb-2">💡 Rekomendasi Hari Ini</p>
+                      <p className="text-xs text-emerald-700">
+                        {getWellnessRecommendations(wellnessScore)[0]}
+                      </p>
+                    </div>
+
+                    {/* Time until next assessment */}
+                    <div className="p-3 bg-blue-50 rounded-lg text-center">
+                      <p className="text-xs text-blue-700">
+                        Assessment ulang dalam {getTimeUntilNextAssessment()} jam
+                      </p>
+                      <Button
+                        onClick={() => router.push('/dashboard/wellness')}
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 text-blue-700 hover:text-blue-800"
+                      >
+                        <FiHeart className="mr-1 h-3 w-3" />
+                        View Details
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  // Show prompt to complete wellness assessment
+                  <div className="text-center space-y-4">
+                    <div className="p-6 bg-gradient-to-br from-red-50 to-pink-50 rounded-lg border border-red-200">
+                      <FiHeart className="h-12 w-12 text-red-400 mx-auto mb-3" />
+                      <h3 className="font-semibold text-slate-800 mb-2">
+                        Wellness Check Diperlukan
+                      </h3>
+                      <p className="text-sm text-slate-600 mb-4">
+                        Lakukan assessment wellness harian untuk mendapatkan insights kesehatan Anda.
+                      </p>
+                      <Button
+                        onClick={() => router.push('/dashboard/wellness')}
+                        className="w-full bg-red-500 hover:bg-red-600 text-white"
+                      >
+                        <FiHeart className="mr-2 h-4 w-4" />
+                        Mulai Wellness Check
+                      </Button>
+                    </div>
+                    
+                    <div className="p-3 bg-yellow-50 rounded-lg">
+                      <p className="text-xs text-yellow-800">
+                        ⚡ <strong>Tip:</strong> Wellness check hanya butuh 2 menit dan membantu optimasi performa harian Anda.
+                      </p>
+                    </div>
                   </div>
-                ))}
-                
-                <Separator className="my-4" />
-                
-                <div className="bg-emerald-50 p-4 rounded-lg">
-                  <p className="text-sm font-medium text-emerald-800 mb-2">💡 Rekomendasi Hari Ini</p>
-                  <p className="text-xs text-emerald-700">
-                    Istirahat 15 menit setiap 2 jam untuk menjaga stamina optimal.
-                  </p>
-                </div>
+                )}
               </CardContent>
             </Card>
 
@@ -468,6 +555,16 @@ export default function DashboardPage() {
                     }
                   </p>
                 </div>
+
+                {/* Wellness-based insights */}
+                {hasWellnessData && wellnessScore < 60 && (
+                  <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                    <h4 className="font-semibold text-red-800 mb-2">🏥 Health Alert</h4>
+                    <p className="text-sm text-red-700">
+                      Wellness score rendah. Pertimbangkan break lebih sering hari ini.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

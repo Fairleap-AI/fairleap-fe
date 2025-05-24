@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -67,6 +67,15 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
     }
   ]);
   const [newMessage, setNewMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll to bottom when new message is added
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(scrollToBottom, [chatMessages, isTyping]);
 
   useEffect(() => {
     // Check authentication
@@ -92,7 +101,7 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
   };
 
   const sendMessage = () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || isTyping) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -102,8 +111,9 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
     };
 
     setChatMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
 
-    // Simulate AI response
+    // Simulate AI response with typing indicator
     setTimeout(() => {
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -112,7 +122,8 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+      setIsTyping(false);
+    }, 1500);
 
     setNewMessage('');
   };
@@ -193,7 +204,9 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
       {/* Main Content */}
       <div className={`flex-1 flex flex-col transition-all duration-300 ${leftSidebarOpen ? 'ml-64' : 'ml-16'}`}>
         {/* Top Header */}
-        <header className="h-16 bg-white/80 backdrop-blur-sm border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40">
+        <header className={`h-16 bg-white/80 backdrop-blur-sm border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40 transition-all duration-300 ${
+          rightSidebarOpen ? 'mr-80' : ''
+        }`}>
           <div>
             <h1 className="text-xl font-bold text-slate-800">{title}</h1>
             {subtitle && (
@@ -221,7 +234,11 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
               variant="ghost"
               size="sm"
               onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
-              className="text-emerald-600"
+              className={`transition-colors duration-200 ${
+                rightSidebarOpen 
+                  ? 'text-emerald-700 bg-emerald-100 hover:bg-emerald-200' 
+                  : 'text-emerald-600 hover:bg-emerald-50'
+              }`}
             >
               <img src="/Chatbot.png" alt="Chatbot" className="h-6 w-6" />
             </Button>
@@ -229,47 +246,54 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
         </header>
 
         {/* Main Content Area with dynamic margin */}
-        <div className={`flex-1 overflow-y-auto transition-all duration-300 ${rightSidebarOpen ? 'mr-80' : 'mr-0'}`}>
+        <div className={`flex-1 overflow-y-auto transition-all duration-300 ${rightSidebarOpen ? 'mr-80' : ''}`}>
           {children}
         </div>
       </div>
 
       {/* Right Sidebar - Chatbot */}
-      <div className={`${rightSidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 bg-white/80 backdrop-blur-sm border-l border-slate-200 h-screen fixed right-0 top-0 z-30 flex flex-col overflow-hidden`}>
-        {rightSidebarOpen && (
-          <>
+      {rightSidebarOpen && (
+        <div className="w-80 transition-all duration-300 bg-white/80 backdrop-blur-sm border-l border-slate-200 h-screen fixed right-0 top-0 z-30 flex flex-col overflow-hidden md:w-80">
+          {/* Mobile Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-20 md:hidden"
+            onClick={() => setRightSidebarOpen(false)}
+          />
+          
+          {/* Chatbot Content */}
+          <div className="relative z-30 h-full flex flex-col bg-white md:bg-white/80 md:backdrop-blur-sm w-80 ml-auto">
             {/* Chatbot Header */}
-            <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 flex-shrink-0">
+            <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 flex-shrink-0 bg-gradient-to-r from-emerald-50 to-blue-50">
               <div className="flex items-center space-x-2">
                 <img src="/Chatbot.png" alt="Chatbot" className="h-8 w-8" />
                 <span className="font-semibold text-slate-800">AI Assistant</span>
+                <Badge variant="outline" className="bg-emerald-100 text-emerald-700 text-xs">
+                  Online
+                </Badge>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setRightSidebarOpen(false)}
-                className="text-slate-600"
+                className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
               >
                 <FiX className="h-5 w-5" />
               </Button>
             </div>
 
-            {/* Chat Messages - Internal scroll with fixed height */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
+            {/* Chat Messages - Scrollable area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {chatMessages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] p-3 rounded-lg text-sm ${
-                      message.sender === 'user'
-                        ? 'bg-emerald-500 text-white rounded-br-none'
-                        : 'bg-slate-100 text-slate-800 rounded-bl-none'
-                    }`}
-                  >
-                    <p>{message.content}</p>
-                    <p className="text-xs mt-1 opacity-70">
+                <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] p-3 rounded-lg ${
+                    message.sender === 'user' 
+                      ? 'bg-emerald-600 text-white rounded-br-sm' 
+                      : 'bg-slate-100 text-slate-800 rounded-bl-sm'
+                  }`}>
+                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    <p className={`text-xs mt-1 ${
+                      message.sender === 'user' ? 'text-emerald-100' : 'text-slate-500'
+                    }`}>
                       {message.timestamp.toLocaleTimeString('id-ID', { 
                         hour: '2-digit', 
                         minute: '2-digit' 
@@ -278,9 +302,28 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
                   </div>
                 </div>
               ))}
+              
+              {/* Typing Indicator */}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-slate-100 text-slate-800 rounded-lg rounded-bl-sm p-3">
+                    <div className="flex items-center space-x-1">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      </div>
+                      <span className="text-xs text-slate-500 ml-2">AI sedang mengetik...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Scroll anchor */}
+              <div ref={messagesEndRef} />
             </div>
 
-            {/* Chat Input - Fixed at bottom with compact height */}
+            {/* Chat Input - Fixed at bottom */}
             <div className="border-t border-slate-200 bg-white flex-shrink-0">
               <div className="p-3 space-y-2">
                 <div className="flex space-x-2">
@@ -288,13 +331,14 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
                     placeholder="Tanya seputar earnings, rute, wellness..."
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                    onKeyPress={(e) => e.key === 'Enter' && !isTyping && sendMessage()}
+                    disabled={isTyping}
                     className="flex-1 text-sm h-9"
                   />
                   <Button
                     onClick={sendMessage}
-                    disabled={!newMessage.trim()}
-                    className="bg-emerald-600 hover:bg-emerald-700 h-9 px-3"
+                    disabled={!newMessage.trim() || isTyping}
+                    className="bg-emerald-600 hover:bg-emerald-700 h-9 px-3 disabled:opacity-50"
                     size="sm"
                   >
                     <FiSend className="h-4 w-4" />
@@ -330,19 +374,27 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
                 </div>
               </div>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Chatbot Button - Shows when header is not visible */}
       {!isHeaderVisible && !rightSidebarOpen && (
         <Button
           onClick={() => setRightSidebarOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 shadow-lg z-50 flex items-center justify-center"
+          className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-700 shadow-lg z-50 flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
           size="sm"
         >
           <img src="/Chatbot.png" alt="Chatbot" className="h-8 w-8" />
         </Button>
+      )}
+
+      {/* Mobile: Close chatbot when clicking outside on mobile */}
+      {rightSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-transparent z-25 md:hidden"
+          onClick={() => setRightSidebarOpen(false)}
+        />
       )}
     </div>
   );
