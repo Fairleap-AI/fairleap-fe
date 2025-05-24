@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/form";
 import { FcGoogle } from "react-icons/fc";
 import { IoEyeOutline, IoEyeOffOutline, IoArrowBack } from "react-icons/io5";
+import { apiClient } from "@/lib/api";
+import { useToast } from "@/components/ui/toast";
 
 const registerSchema = z
   .object({
@@ -43,12 +45,16 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { addToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordsMatch, setPasswordsMatch] = useState<boolean | null>(null);
   const [emailVerified, setEmailVerified] = useState(false);
   const [verifyingEmail, setVerifyingEmail] = useState(false);
+  const [verificationToken, setVerificationToken] = useState<string | null>(
+    null
+  );
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -85,14 +91,62 @@ export default function SignUpPage() {
     setVerifyingEmail(true);
 
     try {
-      // TODO: Implement actual email verification logic here
-      // Simulate email verification process
-      setTimeout(() => {
-        setEmailVerified(true);
-        setVerifyingEmail(false);
-      }, 2000);
-    } catch (error) {
+      const response = await apiClient.verifyEmail(email);
+
+      if (response.status === "success") {
+        const verificationUrl = response.data.verificationCheck;
+        const token = verificationUrl.split("token=")[1];
+        setVerificationToken(token);
+
+        addToast({
+          type: "success",
+          title: "Verification Email Sent",
+          description:
+            "Please check your inbox and click the verification link.",
+        });
+
+        // Start polling for verification status
+        const pollInterval = setInterval(async () => {
+          try {
+            const statusResponse = await apiClient.checkEmailVerification(
+              token
+            );
+            if (
+              statusResponse.status === "success" &&
+              statusResponse.data.isVerified
+            ) {
+              setEmailVerified(true);
+              clearInterval(pollInterval);
+              addToast({
+                type: "success",
+                title: "Email Verified",
+                description: "Your email has been successfully verified!",
+              });
+            }
+          } catch (error) {
+            console.error("Error checking verification status:", error);
+          }
+        }, 3000);
+
+        // Stop polling after 10 minutes
+        setTimeout(() => {
+          clearInterval(pollInterval);
+        }, 600000);
+      } else {
+        addToast({
+          type: "error",
+          title: "Verification Failed",
+          description: response.message,
+        });
+      }
+    } catch (error: any) {
       console.error("Error sending verification email:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        description: "Failed to send verification email. Please try again.",
+      });
+    } finally {
       setVerifyingEmail(false);
     }
   };
@@ -108,13 +162,36 @@ export default function SignUpPage() {
 
     setIsLoading(true);
     try {
-      console.log("Register data:", data);
+      const response = await apiClient.register(data.email, data.password);
 
-      setTimeout(() => {
-        router.push("/auth/sign-in");
-      }, 1000);
-    } catch (error) {
+      if (response.status === "success") {
+        addToast({
+          type: "success",
+          title: "Registration Successful",
+          description: "Your account has been created successfully!",
+        });
+
+        localStorage.setItem("authToken", response.data.token);
+
+        router.push(
+          `/auth/sign-in?email=${encodeURIComponent(
+            data.email
+          )}&password=${encodeURIComponent(data.password)}`
+        );
+      } else {
+        addToast({
+          type: "error",
+          title: "Registration Failed",
+          description: response.message,
+        });
+      }
+    } catch (error: any) {
       console.error("Registration failed:", error);
+      addToast({
+        type: "error",
+        title: "Registration Failed",
+        description: "An error occurred during registration. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -138,24 +215,23 @@ export default function SignUpPage() {
           className="h-full w-full object-cover rounded-2xl"
         />
       </div>
-      {/* Right Register Form Panel */}{" "}
+      {/* Right Register Form Panel */}
       <div className="flex flex-col w-full lg:w-1/2 items-center justify-center px-8 py-12 sm:px-12 md:px-16 lg:px-24 bg-white overflow-y-auto">
-        {" "}
         <div className="w-full max-w-md">
-          {" "}
-          {/* Back Arrow */}{" "}
+          {/* Back Arrow */}
           <Link
             href="/"
             className="inline-flex items-center text-primary hover:text-primary/80 transition-colors mb-8"
           >
-            {" "}
-            <IoArrowBack className="h-5 w-5 mr-2" /> Back to Home{" "}
-          </Link>{" "}
-          {/* Logo for mobile view */}{" "}
+            <IoArrowBack className="h-5 w-5 mr-2" />
+            Back to Home
+          </Link>
+
+          {/* Logo for mobile view */}
           <div className="flex lg:hidden justify-center mb-12">
-            {" "}
-            <h1 className="text-2xl font-bold text-primary">FairLeap</h1>{" "}
+            <h1 className="text-2xl font-bold text-primary">FairLeap</h1>
           </div>
+
           {/* Icon and Welcome Text */}
           <div className="mb-10 text-left">
             <img
@@ -170,6 +246,7 @@ export default function SignUpPage() {
               Sign up to start your journey with FairLeap
             </p>
           </div>
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -366,6 +443,7 @@ export default function SignUpPage() {
               </Button>
             </form>
           </Form>
+
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -388,6 +466,7 @@ export default function SignUpPage() {
               </Button>
             </div>
           </div>
+
           <p className="mt-10 text-center text-sm text-gray-600">
             Already have an account?{" "}
             <Link
