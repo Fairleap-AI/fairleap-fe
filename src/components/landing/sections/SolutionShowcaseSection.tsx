@@ -411,7 +411,7 @@ export default function SolutionShowcaseSection() {
                 <div className="text-center mb-6 h-24 flex flex-col justify-center">
                   <h3 className="text-lg font-medium text-muted-foreground mb-2">
                     {feature.title}
-                  </h3>
+                </h3>
                   <h4 className="text-2xl font-bold text-slate-800">
                     {feature.headline}
                   </h4>
@@ -431,15 +431,15 @@ export default function SolutionShowcaseSection() {
                   </h5>
                   <ul className="space-y-3">
                     {feature.benefits.map((benefit, benefitIndex) => (
-                      <li
-                        key={benefitIndex}
+                    <li
+                      key={benefitIndex}
                         className="flex items-center text-sm hover:text-emerald-700 transition-colors"
-                      >
+                    >
                         <div className="mr-3 flex-shrink-0">{benefit.icon}</div>
                         <span>{benefit.text}</span>
-                      </li>
-                    ))}
-                  </ul>
+                    </li>
+                  ))}
+                </ul>
                 </div>
 
                 {/* Visual Section - Fixed Height */}

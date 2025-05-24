@@ -510,9 +510,9 @@ export default function HowItWorksSection() {
                         >
                           <div className="w-2 h-2 bg-gradient-to-r from-emerald-400 to-blue-500 rounded-full mt-2.5 group-hover:scale-125 transition-transform duration-300"></div>
                           <span className="text-slate-600 leading-relaxed">{feature}</span>
-                        </div>
-                      ))}
-                    </div>
+            </div>
+          ))}
+        </div>
 
                     {/* Progress */}
                     <div className={`pt-4 transition-all duration-500 ${
@@ -521,15 +521,15 @@ export default function HowItWorksSection() {
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm text-slate-500 font-medium">Progress</span>
                         <span className="text-sm text-emerald-600 font-bold">{(currentStep / steps.length * 100).toFixed(0)}%</span>
-                      </div>
+                  </div>
                       <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                         <div 
                           className="bg-gradient-to-r from-emerald-400 to-blue-500 h-2 rounded-full transition-all duration-700 ease-out"
                           style={{ width: `${currentStep / steps.length * 100}%` }}
                         ></div>
-                      </div>
-                    </div>
-                  </div>
+            </div>
+          </div>
+        </div>
 
                   {/* Visualization dengan Wipe dari Kanan ke Kiri */}
                   <div 
@@ -542,7 +542,7 @@ export default function HowItWorksSection() {
                     style={{ transitionDelay: isTransitioning ? '0ms' : '200ms' }}
                   >
                     <StepVisualization step={currentStepData} />
-                  </div>
+              </div>
                 </div>
               </div>
             </CardContent>

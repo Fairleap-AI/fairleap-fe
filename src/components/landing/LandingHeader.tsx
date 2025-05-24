@@ -13,7 +13,6 @@ export default function LandingHeader() {
     { name: "Demo", href: "#demo" },
     { name: "Impact", href: "#impact" },
     { name: "Technology", href: "#technology" },
-    { name: "Testimonials", href: "#testimonials" },
   ];
 
   return (
@@ -24,6 +23,7 @@ export default function LandingHeader() {
           <div className="flex items-center">
             <h1 className="text-2xl font-bold text-primary">FairLeap</h1>
           </div>
+          
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
@@ -36,18 +36,17 @@ export default function LandingHeader() {
               </a>
             ))}
           </nav>
-          {/* CTA Buttons */}{" "}
+          
+          {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            {" "}
             <Button variant="ghost" asChild>
-              {" "}
-              <a href="/auth/sign-in">Login</a>{" "}
-            </Button>{" "}
+              <a href="/auth/sign-in">Login</a>
+            </Button>
             <Button asChild>
-              {" "}
-              <a href="/auth/sign-up">Get Started</a>{" "}
-            </Button>{" "}
+              <a href="/auth/sign-up">Get Started</a>
+            </Button>
           </div>
+          
           {/* Mobile Menu Button */}
           <button
             className="md:hidden"
