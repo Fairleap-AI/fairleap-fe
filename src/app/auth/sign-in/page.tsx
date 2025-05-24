@@ -83,7 +83,7 @@ export default function SignInPage() {
           description: response.message,
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Login failed:", error);
       addToast({
         type: "error",
@@ -97,6 +97,10 @@ export default function SignInPage() {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+  const handleGoogleLogin = () => {
+    const googleOAuthUrl = apiClient.getGoogleOAuthUrl();
+    window.location.href = googleOAuthUrl;
   };
 
   return (
@@ -252,15 +256,17 @@ export default function SignInPage() {
             </div>
 
             <div className="mt-6">
+              {" "}
               <Button
                 variant="outline"
                 disabled={isLoading}
+                onClick={handleGoogleLogin}
                 className="w-full border border-border rounded-md h-12 hover:bg-muted/10 transition-colors text-primary font-medium hover:text-primary/80"
                 type="button"
               >
-                <FcGoogle className="mr-2 h-4 w-4" />
-                Sign In with Google
-              </Button>
+                {" "}
+                <FcGoogle className="mr-2 h-4 w-4" /> Sign In with Google{" "}
+              </Button>{" "}
             </div>
           </div>
 
