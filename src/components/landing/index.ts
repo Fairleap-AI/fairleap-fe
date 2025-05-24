@@ -9,5 +9,5 @@ export { default as HowItWorksSection } from "./sections/HowItWorksSection";
 export { default as LiveDemonstrationSection } from "./sections/LiveDemonstrationSection";
 export { default as ImpactMetricsSection } from "./sections/ImpactMetricsSection";
 export { default as TechnologyCredibilitySection } from "./sections/TechnologyCredibilitySection";
-export { default as TestimonialsSection } from "./sections/TestimonialsSection";
+
 export { default as CallToActionSection } from "./sections/CallToActionSection";

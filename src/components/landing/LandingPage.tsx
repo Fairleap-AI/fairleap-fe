@@ -8,7 +8,7 @@ import HowItWorksSection from "./sections/HowItWorksSection";
 import LiveDemonstrationSection from "./sections/LiveDemonstrationSection";
 import ImpactMetricsSection from "./sections/ImpactMetricsSection";
 import TechnologyCredibilitySection from "./sections/TechnologyCredibilitySection";
-import TestimonialsSection from "./sections/TestimonialsSection";
+
 import CallToActionSection from "./sections/CallToActionSection";
 
 export default function LandingPage() {
@@ -23,7 +23,6 @@ export default function LandingPage() {
         <LiveDemonstrationSection />
         <ImpactMetricsSection />
         <TechnologyCredibilitySection />
-        <TestimonialsSection />
         <CallToActionSection />
       </main>
       <LandingFooter />
