@@ -1,7 +1,6 @@
 "use client";
+
 import React from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FiMenu, FiX } from "react-icons/fi";
 import { useState } from "react";
@@ -21,22 +20,11 @@ export default function LandingHeader() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}{" "}
+          {/* Logo */}
           <div className="flex items-center">
-            {" "}
-            <Link href="/" className="cursor-pointer">
-              {" "}
-              <Image
-                src="/logo-full.png"
-                alt="FairLeap"
-                width={160}
-                height={53}
-                priority
-                quality={100}
-                className="h-9 w-auto hover:opacity-80 transition-opacity"
-              />{" "}
-            </Link>{" "}
+            <h1 className="text-2xl font-bold text-primary">FairLeap</h1>
           </div>
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
@@ -49,6 +37,7 @@ export default function LandingHeader() {
               </a>
             ))}
           </nav>
+
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
             <Button variant="ghost" asChild>
@@ -58,6 +47,7 @@ export default function LandingHeader() {
               <a href="/signup">Get Started</a>
             </Button>
           </div>
+
           {/* Mobile Menu Button */}
           <button
             className="md:hidden"

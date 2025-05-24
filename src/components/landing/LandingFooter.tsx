@@ -1,6 +1,4 @@
 import React from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { FiTwitter, FiLinkedin, FiGithub, FiMail } from "react-icons/fi";
 
 export default function LandingFooter() {
@@ -8,20 +6,9 @@ export default function LandingFooter() {
     <footer className="bg-muted border-t">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Company Info */}{" "}
+          {/* Company Info */}
           <div className="space-y-4">
-            {" "}
-            <Link href="/" className="cursor-pointer inline-block">
-              {" "}
-              <Image
-                src="/logo-full.png"
-                alt="FairLeap"
-                width={160}
-                height={53}
-                quality={100}
-                className="h-10 w-auto hover:opacity-80 transition-opacity"
-              />{" "}
-            </Link>
+            <h3 className="text-2xl font-bold text-primary">FairLeap</h3>
             <p className="text-muted-foreground">
               Revolutionizing industries with AI-powered solutions for a fairer
               and more efficient future.
@@ -53,6 +40,7 @@ export default function LandingFooter() {
               </a>
             </div>
           </div>
+
           {/* Product */}
           <div>
             <h4 className="font-semibold mb-4">Product</h4>
@@ -79,6 +67,7 @@ export default function LandingFooter() {
               </li>
             </ul>
           </div>
+
           {/* Company */}
           <div>
             <h4 className="font-semibold mb-4">Company</h4>
@@ -105,6 +94,7 @@ export default function LandingFooter() {
               </li>
             </ul>
           </div>
+
           {/* Support */}
           <div>
             <h4 className="font-semibold mb-4">Support</h4>
