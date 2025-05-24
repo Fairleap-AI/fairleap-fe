@@ -344,8 +344,8 @@ export default function SolutionShowcaseSection() {
         {
           icon: <Activity className="w-4 h-4 text-emerald-600" />,
           text: "Fatigue level monitoring",
-        },
-        {
+    },
+    {
           icon: <Clock className="w-4 h-4 text-emerald-600" />,
           text: "Smart break reminders",
         },
@@ -370,8 +370,8 @@ export default function SolutionShowcaseSection() {
         {
           icon: <TrendingDown className="w-4 h-4 text-emerald-600" />,
           text: "Micro-investment opportunities",
-        },
-        {
+    },
+    {
           icon: <Shield className="w-4 h-4 text-emerald-600" />,
           text: "Insurance & loan access",
         },
@@ -421,7 +421,7 @@ export default function SolutionShowcaseSection() {
                 <div className="mb-8 h-20 flex items-center">
                   <p className="text-muted-foreground leading-relaxed text-center text-sm">
                     {feature.description}
-                  </p>
+                </p>
                 </div>
 
                 {/* Key Benefits Section - Fixed Height */}

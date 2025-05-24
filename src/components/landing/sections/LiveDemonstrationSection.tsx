@@ -14,28 +14,23 @@ import {
 } from "react-icons/fi";
 import { gsap } from "gsap";
 
-// Hook untuk intersection observer - trigger once on viewport enter
-const useInViewOnce = (threshold = 0.3) => {
-  const [hasEntered, setHasEntered] = useState(false);
+// Hook untuk intersection observer
+const useInView = (threshold = 0.2) => {
+  const [isInView, setIsInView] = useState(false);
   const ref = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !hasEntered) {
-          setHasEntered(true);
-          // Disconnect observer after first trigger untuk performa
-          observer.disconnect();
+        if (entry.isIntersecting) {
+          setIsInView(true);
         }
       },
-      { 
-        threshold,
-        rootMargin: '50px 0px -50px 0px' // Trigger sedikit sebelum masuk viewport
-      }
+      { threshold }
     );
 
     const currentRef = ref.current;
-    if (currentRef && !hasEntered) {
+    if (currentRef) {
       observer.observe(currentRef);
     }
 
@@ -44,13 +39,13 @@ const useInViewOnce = (threshold = 0.3) => {
         observer.unobserve(currentRef);
       }
     };
-  }, [threshold, hasEntered]);
+  }, [threshold]);
 
-  return { ref, hasEntered };
+  return { ref, isInView };
 };
 
 export default function LiveDemonstrationSection() {
-  const { ref: sectionRef, hasEntered } = useInViewOnce(0.1);
+  const { ref: sectionRef, isInView } = useInView(0.1);
   const headerRef = useRef<HTMLDivElement>(null);
   const badgeRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -87,27 +82,19 @@ export default function LiveDemonstrationSection() {
     }
   ];
 
-  // GSAP Animations - trigger hanya sekali saat masuk viewport
+  // GSAP Animations
   useEffect(() => {
-    if (!hasEntered || animationCompleted) return;
-
-    // Set animationCompleted immediately to prevent re-triggering
-    setAnimationCompleted(true);
+    if (!isInView || animationCompleted) return;
 
     const tl = gsap.timeline({
-      delay: 0.2, // Small delay untuk smooth entrance
-      onStart: () => {
-        // Ensure visibility during animation
-        gsap.set(sectionRef.current, { visibility: 'visible' });
-      }
+      onComplete: () => setAnimationCompleted(true)
     });
 
     // Set initial states for header elements
     gsap.set(badgeRef.current, {
       opacity: 0,
       y: -30,
-      scale: 0.8,
-      visibility: 'visible' // Ensure visibility for animation
+      scale: 0.8
     });
 
     gsap.set(titleRef.current, {
@@ -232,7 +219,7 @@ export default function LiveDemonstrationSection() {
     }, "-=0.8");
 
     // Floating animation for demo icon
-    const demoIconAnimation = gsap.to(demoIconRef.current, {
+    gsap.to(demoIconRef.current, {
       y: -10,
       duration: 2,
       repeat: -1,
@@ -242,8 +229,8 @@ export default function LiveDemonstrationSection() {
     });
 
     // Subtle floating animation for feature icons
-    const iconAnimations = featureIconsRefs.current.map((icon, index) => {
-      return gsap.to(icon, {
+    featureIconsRefs.current.forEach((icon, index) => {
+      gsap.to(icon, {
         y: -8,
         rotation: 5,
         duration: 3 + index * 0.5,
@@ -254,14 +241,7 @@ export default function LiveDemonstrationSection() {
       });
     });
 
-    // Cleanup function
-    return () => {
-      tl.kill();
-      demoIconAnimation?.kill();
-      iconAnimations.forEach(anim => anim?.kill());
-    };
-
-  }, [hasEntered, animationCompleted]);
+  }, [isInView, animationCompleted]);
 
   // Card Hover Animations
   const handleCardHover = (ref: HTMLDivElement | null, isEntering: boolean) => {
@@ -300,7 +280,7 @@ export default function LiveDemonstrationSection() {
     <section 
       ref={sectionRef}
       id="demo" 
-      className={`py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden ${!hasEntered ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+      className="py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 relative overflow-hidden"
     >
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
