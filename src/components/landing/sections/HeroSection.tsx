@@ -30,7 +30,7 @@ export default function HeroSection() {
           opacity: 1,
           duration: 2,
           stagger: 0.3,
-          ease: "power3.out",
+        ease: "power3.out",
           delay: 0.5
         });
       }
@@ -43,7 +43,7 @@ export default function HeroSection() {
           y: 0,
           duration: 1.5,
           stagger: 0.2,
-          ease: "power3.out",
+            ease: "power3.out",
           delay: 1
         });
 
@@ -82,7 +82,7 @@ export default function HeroSection() {
                     {/* Trust Badge - Visible dari awal tanpa animation heavy */}          <div            ref={trustRef}            className={`inline-flex items-center gap-3 bg-gradient-to-r from-green-50 to-green-100 border border-green-200/50 px-6 py-3 rounded-full text-sm font-semibold mb-8 mt-8 shadow-lg backdrop-blur-sm transition-opacity duration-700 ${              isInitialized ? 'opacity-100' : 'opacity-0'            }`}            style={{ color: '#00AA13' }}          >            <div className="flex items-center gap-1">              {[...Array(5)].map((_, i) => (                <FiStar key={i} className="w-3 h-3 fill-current text-current" />              ))}            </div>            <span>Trusted by 50,000+ drivers</span>            <FiShield className="w-4 h-4" />          </div>
 
           {/* Headline - Stable dari awal */}
-          <h1 
+          <h1
             ref={titleRef}
             className={`text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-[0.9] transition-all duration-700 ${
               isInitialized ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
