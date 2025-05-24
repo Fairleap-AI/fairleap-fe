@@ -1,19 +1,10 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { FiArrowRight, FiPlay, FiShield, FiTrendingUp, FiUsers, FiStar, FiZap } from "react-icons/fi";
-import { gsap } from "gsap";
+import React, { useRef, useEffect, useState } from "react";import { Button } from "@/components/ui/button";import { FiArrowRight, FiPlay, FiShield, FiTrendingUp, FiUsers, FiStar, FiZap } from "react-icons/fi";import { gsap } from "gsap";import ShinyText from "@/components/shine-effect";
 
 export default function HeroSection() {
-  const heroRef = useRef<HTMLElement>(null);
-  const ctaButtonRef = useRef<HTMLButtonElement>(null);
-  const ctaTextRef = useRef<HTMLSpanElement>(null);
-  const ctaHoverTextRef = useRef<HTMLSpanElement>(null);
-  const floatingCardsRef = useRef<HTMLDivElement>(null);
-  const backgroundRef = useRef<HTMLDivElement>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isInitialized, setIsInitialized] = useState(false);
+    const heroRef = useRef<HTMLElement>(null);  const titleRef = useRef<HTMLHeadingElement>(null);  const subtitleRef = useRef<HTMLParagraphElement>(null);  const statsRef = useRef<HTMLDivElement>(null);  const trustRef = useRef<HTMLDivElement>(null);  const floatingCardsRef = useRef<HTMLDivElement>(null);  const backgroundRef = useRef<HTMLDivElement>(null);
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -28,12 +19,6 @@ export default function HeroSection() {
     setIsInitialized(true);
 
     const ctx = gsap.context(() => {
-      // Set CTA text elements untuk hover effect
-      if (ctaTextRef.current && ctaHoverTextRef.current) {
-        gsap.set(ctaTextRef.current, { opacity: 1, y: 0 });
-        gsap.set(ctaHoverTextRef.current, { opacity: 0, y: 20 });
-      }
-
       // Background animation yang tidak mengganggu main content
       if (backgroundRef.current?.children) {
         gsap.set(backgroundRef.current.children, { scale: 0, opacity: 0 });
@@ -72,107 +57,30 @@ export default function HeroSection() {
           delay: 2.5
         });
       }
-
-      // CTA Button hover animations
-      const handleCTAHover = () => {
-        if (ctaTextRef.current && ctaHoverTextRef.current) {
-          gsap.to(ctaTextRef.current, {
-            opacity: 0,
-            y: -20,
-            duration: 0.3,
-            ease: "power2.out"
-          });
-          gsap.to(ctaHoverTextRef.current, {
-            opacity: 1,
-            y: 0,
-            duration: 0.3,
-            ease: "power2.out",
-            delay: 0.1
-          });
-        }
-      };
-
-      const handleCTALeave = () => {
-        if (ctaTextRef.current && ctaHoverTextRef.current) {
-          gsap.to(ctaHoverTextRef.current, {
-            opacity: 0,
-            y: 20,
-            duration: 0.3,
-            ease: "power2.out"
-          });
-          gsap.to(ctaTextRef.current, {
-            opacity: 1,
-            y: 0,
-            duration: 0.3,
-            ease: "power2.out",
-            delay: 0.1
-          });
-        }
-      };
-
-      // Add event listeners
-      const button = ctaButtonRef.current;
-      if (button) {
-        button.addEventListener('mouseenter', handleCTAHover);
-        button.addEventListener('mouseleave', handleCTALeave);
-
-        return () => {
-          button.removeEventListener('mouseenter', handleCTAHover);
-          button.removeEventListener('mouseleave', handleCTALeave);
-        };
-      }
     }, heroRef);
 
     return () => ctx.revert();
   }, []);
 
-  return (    <section      ref={heroRef}      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 pb-20"      style={{        background: `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(16, 185, 129, 0.1) 0%, transparent 50%)`,      }}    >
-      {/* Clean Dynamic Background */}
-      <div ref={backgroundRef} className="absolute inset-0">
-        <div className="absolute top-20 left-20 w-72 h-72 bg-gradient-to-br from-emerald-400/20 to-emerald-600/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-40 right-32 w-96 h-96 bg-gradient-to-bl from-blue-400/15 to-cyan-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-32 left-1/3 w-80 h-80 bg-gradient-to-tr from-orange-400/15 to-yellow-500/10 rounded-full blur-3xl"></div>
+  return (
+    <section
+      ref={heroRef}
+      className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 pb-20"
+      style={{
+        background: `radial-gradient(circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(16, 185, 129, 0.1) 0%, transparent 50%)`,
+      }}
+    >
+            {/* Clean Dynamic Background */}      <div ref={backgroundRef} className="absolute inset-0">        <div className="absolute top-20 left-20 w-72 h-72 rounded-full blur-3xl" style={{           background: 'linear-gradient(to bottom right, rgba(0, 170, 19, 0.2), rgba(0, 122, 14, 0.1))'        }}></div>        <div className="absolute top-40 right-32 w-96 h-96 rounded-full blur-3xl" style={{          background: 'linear-gradient(to bottom left, rgba(30, 136, 229, 0.15), rgba(0, 191, 165, 0.1))'        }}></div>        <div className="absolute bottom-32 left-1/3 w-80 h-80 rounded-full blur-3xl" style={{          background: 'linear-gradient(to top right, rgba(255, 107, 53, 0.15), rgba(245, 158, 11, 0.1))'        }}></div>
 
-        {/* Subtle animated grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-20"></div>
-      </div>
-
-      {/* Floating Cards */}
-      <div ref={floatingCardsRef} className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-32 left-16 bg-white/80 backdrop-blur-sm border border-emerald-200 rounded-2xl p-4 shadow-xl">
-          <div className="flex items-center gap-2">
-            <FiTrendingUp className="w-5 h-5 text-emerald-600" />
-            <span className="text-sm font-semibold text-slate-700">+₹2,340 today</span>
-          </div>
-        </div>
-
-        <div className="absolute top-48 right-20 bg-white/80 backdrop-blur-sm border border-blue-200 rounded-2xl p-4 shadow-xl">
-          <div className="flex items-center gap-2">
-            <FiZap className="w-5 h-5 text-blue-600" />
-            <span className="text-sm font-semibold text-slate-700">Peak hours: 6-9 PM</span>
-          </div>
-        </div>
-      </div>
+                {/* Subtle animated grid */}        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:3rem_3rem] opacity-20"></div>      </div>      {/* Floating Cards */}      <div ref={floatingCardsRef} className="absolute inset-0 pointer-events-none">        <div className="absolute top-32 left-16 bg-white/80 backdrop-blur-sm border border-green-200 rounded-2xl p-4 shadow-xl">          <div className="flex items-center gap-2">            <FiTrendingUp className="w-5 h-5" style={{ color: '#00AA13' }} />            <span className="text-sm font-semibold text-slate-700">+₹2,340 today</span>          </div>        </div>        <div className="absolute top-48 right-20 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl p-4 shadow-xl">          <div className="flex items-center gap-2">            <FiZap className="w-5 h-5" style={{ color: '#2C3E50' }} />            <span className="text-sm font-semibold text-slate-700">Peak hours: 6-9 PM</span>          </div>        </div>      </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-6xl mx-auto text-center">
-          {/* Trust Badge - Visible dari awal tanpa animation heavy */}
-          <div
-            className={`inline-flex items-center gap-3 bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200/50 text-emerald-700 px-6 py-3 rounded-full text-sm font-semibold mb-8 mt-8 shadow-lg backdrop-blur-sm transition-opacity duration-700 ${
-              isInitialized ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <FiStar key={i} className="w-3 h-3 fill-emerald-500 text-emerald-500" />
-              ))}
-            </div>
-            <span>Trusted by 50,000+ drivers</span>
-            <FiShield className="w-4 h-4" />
-          </div>
+                    {/* Trust Badge - Visible dari awal tanpa animation heavy */}          <div            ref={trustRef}            className={`inline-flex items-center gap-3 bg-gradient-to-r from-green-50 to-green-100 border border-green-200/50 px-6 py-3 rounded-full text-sm font-semibold mb-8 mt-8 shadow-lg backdrop-blur-sm transition-opacity duration-700 ${              isInitialized ? 'opacity-100' : 'opacity-0'            }`}            style={{ color: '#00AA13' }}          >            <div className="flex items-center gap-1">              {[...Array(5)].map((_, i) => (                <FiStar key={i} className="w-3 h-3 fill-current text-current" />              ))}            </div>            <span>Trusted by 50,000+ drivers</span>            <FiShield className="w-4 h-4" />          </div>
 
           {/* Headline - Stable dari awal */}
           <h1 
+            ref={titleRef}
             className={`text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-6 leading-[0.9] transition-all duration-700 ${
               isInitialized ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
@@ -216,6 +124,7 @@ export default function HeroSection() {
 
           {/* Subheadline - Stable */}
           <p
+            ref={subtitleRef}
             className={`text-lg md:text-xl lg:text-2xl text-slate-600 mb-8 max-w-4xl mx-auto leading-relaxed font-medium transition-all duration-700 ${
               isInitialized ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
@@ -227,83 +136,129 @@ export default function HeroSection() {
             </span>
           </p>
 
-          {/* CTA Button - Stable dengan hover smooth */}
-          <div 
-            className={`flex justify-center mb-12 transition-all duration-700 ${
+                    {/* CTA Buttons - Simple and clean */}          <div 
+            className={`flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 transition-all duration-700 ${
               isInitialized ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
             style={{ transitionDelay: '300ms' }}
           >
+            {/* Primary CTA - Start Prediction */}
             <Button
-              ref={ctaButtonRef}
               size="lg"
-              className="relative text-lg px-12 py-7 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-2xl hover:shadow-emerald-500/25 transition-all duration-500 transform hover:scale-105 rounded-2xl font-semibold overflow-hidden"
+              className="relative text-lg px-12 py-7 text-white shadow-2xl hover:shadow-green-500/30 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 rounded-2xl font-semibold min-w-[280px]"
+              style={{                 
+                background: 'linear-gradient(to right, #00AA13, #007A0E)',
+                boxShadow: '0 25px 50px -12px rgba(0, 170, 19, 0.25)'
+              }}
             >
-              <span className="relative z-10 flex items-center">
-                <span ref={ctaTextRef} className="flex items-center">
-                  Start Your Prediction
-                  <FiArrowRight className="ml-3" size={20} />
-                </span>
-                <span ref={ctaHoverTextRef} className="absolute inset-0 flex items-center justify-center">
-                  <FiPlay className="mr-3" size={20} />
-                  See Live Demo
-                </span>
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-emerald-500 opacity-0 hover:opacity-100 transition-opacity duration-500"></div>
+                            <span className="flex items-center justify-center">                <div                  className="text-white transition-transform duration-300 hover:translate-x-1 animate-shine"                  style={{                    backgroundImage: 'linear-gradient(120deg, rgba(255, 255, 255, 0.8) 40%, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0.8) 60%)',                    backgroundSize: '200% 100%',                    WebkitBackgroundClip: 'text',                    backgroundClip: 'text',                    animationDuration: '3s',                  }}                >                  Start Your Prediction                </div>                <FiArrowRight className="ml-3 transition-all duration-300 hover:translate-x-2 hover:scale-110" size={20} />              </span>
+            </Button>
+
+            {/* Secondary CTA - Live Demo */}
+            <Button
+              size="lg"
+              variant="outline"
+              className="relative text-lg px-12 py-7 bg-white/90 backdrop-blur-sm border-2 border-slate-300 text-slate-700 shadow-xl hover:shadow-2xl hover:bg-white hover:border-slate-400 hover:text-slate-800 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 rounded-2xl font-semibold min-w-[280px]"
+            >
+                             <span className="flex items-center justify-center">                 <FiPlay className="mr-3 transition-all duration-300 hover:scale-110" size={20} />                 <div                   className="text-slate-700 transition-transform duration-300 hover:translate-x-1 animate-shine"                   style={{                     backgroundImage: 'linear-gradient(120deg, rgba(71, 85, 105, 0.7) 40%, rgba(71, 85, 105, 1) 50%, rgba(71, 85, 105, 0.7) 60%)',                     backgroundSize: '200% 100%',                     WebkitBackgroundClip: 'text',                     backgroundClip: 'text',                     animationDuration: '4s',                   }}                 >                   See Live Demo                 </div>               </span>
             </Button>
           </div>
 
           {/* Trust Indicators - Staggered appearance */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {[
-              {
-                icon: FiUsers,
-                value: "50,000+",
-                label: "Trusted Drivers",
-                sublabel: "Growing community",
-                colors: "emerald",
-                delay: "400ms"
-              },
-              {
-                icon: FiTrendingUp,
-                value: "95%",
-                label: "Prediction Accuracy",
-                sublabel: "AI-powered precision",
-                colors: "blue",
-                delay: "500ms"
-              },
-              {
-                icon: FiZap,
-                value: "₹2.5M+",
-                label: "Average Monthly Earnings Increase",
-                sublabel: "Proven results",
-                colors: "orange",
-                delay: "600ms"
-              }
-            ].map((stat, index) => {
-              const IconComponent = stat.icon;
-              return (
-                <div 
-                  key={index}
-                  className={`group relative bg-gradient-to-br from-white to-${stat.colors}-50/50 backdrop-blur-sm border border-${stat.colors}-200/50 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-700 transform hover:scale-105 hover:-translate-y-2 ${
-                    isInitialized ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                  }`}
-                  style={{ transitionDelay: stat.delay }}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br from-${stat.colors}-500/5 to-${stat.colors}-600/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
-                  <div className="relative z-10">
-                    <div className="flex items-center justify-center mb-4">
-                      <div className={`p-3 bg-gradient-to-br from-${stat.colors}-100 to-${stat.colors}-200 rounded-2xl shadow-lg`}>
-                        <IconComponent className={`w-6 h-6 text-${stat.colors}-600`} />
-                      </div>
-                    </div>
-                    <div className={`text-4xl lg:text-5xl font-black bg-gradient-to-r from-${stat.colors}-600 to-${stat.colors}-700 bg-clip-text text-transparent mb-2`}>
-                      {stat.value}
-                    </div>
-                    <div className="text-slate-600 font-semibold text-lg">{stat.label}</div>
-                    <div className="text-sm text-slate-500 mt-2">{stat.sublabel}</div>
+          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+            {/* Trusted Drivers - Primary Green */}
+            <div 
+              className={`group relative bg-gradient-to-br from-white to-green-50 backdrop-blur-sm border border-green-200 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 ${
+                isInitialized ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '400ms' }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-green-600/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-gradient-to-br from-green-100 to-green-200 rounded-2xl shadow-lg">
+                    <FiUsers className="w-6 h-6" style={{ color: '#00AA13' }} />
                   </div>
                 </div>
-              );
-            })}
-                   </div>        </div>      </div>      {/* Smooth bottom fade untuk transisi ke section berikutnya */}      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none"></div>            {/* Modern scroll indicator */}      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 animate-bounce">        <div className="w-6 h-10 border-2 border-slate-300 rounded-full flex justify-center">          <div className="w-1 h-3 bg-slate-400 rounded-full mt-2 animate-pulse"></div>        </div>      </div>    </section>  );} 
+                <div className="text-4xl lg:text-5xl font-black mb-2" style={{ 
+                  background: 'linear-gradient(to right, #00AA13, #007A0E)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  50,000+
+                </div>
+                <div className="text-slate-600 font-semibold text-lg">Trusted Drivers</div>
+                <div className="text-sm text-slate-500 mt-2">Growing community</div>
+              </div>
+            </div>
+
+            {/* Prediction Accuracy - Trust Blue */}
+            <div 
+              className={`group relative bg-gradient-to-br from-white to-blue-50 backdrop-blur-sm border border-blue-200 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 ${
+                isInitialized ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '500ms' }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-blue-600/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-100 to-blue-200 rounded-2xl shadow-lg">
+                    <FiTrendingUp className="w-6 h-6" style={{ color: '#1E88E5' }} />
+                  </div>
+                </div>
+                <div className="text-4xl lg:text-5xl font-black mb-2" style={{ 
+                  background: 'linear-gradient(to right, #1E88E5, #1565C0)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  95%
+                </div>
+                <div className="text-slate-600 font-semibold text-lg">Prediction Accuracy</div>
+                <div className="text-sm text-slate-500 mt-2">AI-powered precision</div>
+              </div>
+            </div>
+
+            {/* Earnings Increase - Warm Orange */}
+            <div 
+              className={`group relative bg-gradient-to-br from-white to-orange-50 backdrop-blur-sm border border-orange-200 rounded-3xl p-6 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-2 ${
+                isInitialized ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              }`}
+              style={{ transitionDelay: '600ms' }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-orange-600/10 rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-3 bg-gradient-to-br from-orange-100 to-orange-200 rounded-2xl shadow-lg">
+                    <FiZap className="w-6 h-6" style={{ color: '#FF6B35' }} />
+                  </div>
+                </div>
+                <div className="text-4xl lg:text-5xl font-black mb-2" style={{ 
+                  background: 'linear-gradient(to right, #FF6B35, #E55A2B)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}>
+                  ₹2.5M+
+                </div>
+                <div className="text-slate-600 font-semibold text-lg">Average Monthly Earnings Increase</div>
+                <div className="text-sm text-slate-500 mt-2">Proven results</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Smooth bottom fade untuk transisi ke section berikutnya */}
+      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none"></div>
+      
+      {/* Modern scroll indicator */}
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="w-6 h-10 border-2 border-slate-300 rounded-full flex justify-center">
+          <div className="w-1 h-3 bg-slate-400 rounded-full mt-2 animate-pulse"></div>
+        </div>
+      </div>
+    </section>
+  );
+}
