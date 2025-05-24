@@ -139,7 +139,7 @@ export default function SignUpPage() {
           description: response.message,
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error sending verification email:", error);
       addToast({
         type: "error",
@@ -185,7 +185,7 @@ export default function SignUpPage() {
           description: response.message,
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Registration failed:", error);
       addToast({
         type: "error",
@@ -203,6 +203,10 @@ export default function SignUpPage() {
 
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(!showConfirmPassword);
+  };
+  const handleGoogleSignUp = () => {
+    const googleOAuthUrl = apiClient.getGoogleOAuthUrl();
+    window.location.href = googleOAuthUrl;
   };
 
   return (
@@ -458,11 +462,12 @@ export default function SignUpPage() {
               <Button
                 variant="outline"
                 disabled={isLoading}
+                onClick={handleGoogleSignUp}
                 className="w-full border border-border rounded-md h-12 hover:bg-muted/10 transition-colors text-primary font-medium hover:text-primary/80"
                 type="button"
               >
-                <FcGoogle className="mr-2 h-4 w-4" />
-                Sign Up with Google
+                {" "}
+                <FcGoogle className="mr-2 h-4 w-4" /> Sign Up with Google{" "}
               </Button>
             </div>
           </div>

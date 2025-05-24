@@ -99,6 +99,10 @@ class ApiClient {
       body: JSON.stringify({ password, token }),
     });
   }
+
+  getGoogleOAuthUrl(): string {
+    return `${BASE_URL}/user/auth/google`;
+  }
 }
 
 export const apiClient = new ApiClient();
