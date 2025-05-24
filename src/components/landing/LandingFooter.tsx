@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 import { FiTwitter, FiLinkedin, FiGithub, FiMail } from "react-icons/fi";
 
 export default function LandingFooter() {
@@ -8,7 +9,13 @@ export default function LandingFooter() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-primary">FairLeap</h3>
+            <Image
+              src="/logo-full.png"
+              alt="FairLeap Logo"
+              width={140}
+              height={50}
+              className="h-10 w-auto"
+            />
             <p className="text-muted-foreground">
               Revolutionizing industries with AI-powered solutions for a fairer
               and more efficient future.
@@ -124,7 +131,7 @@ export default function LandingFooter() {
         </div>
 
         <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-          <p>&copy; 2024 FairLeap. All rights reserved.</p>
+          <p>&copy; 2025 FairLeap. All rights reserved.</p>
         </div>
       </div>
     </footer>

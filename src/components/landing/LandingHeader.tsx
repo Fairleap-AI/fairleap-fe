@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { FiMenu, FiX } from "react-icons/fi";
 import { useState } from "react";
@@ -21,7 +22,13 @@ export default function LandingHeader() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-primary">FairLeap</h1>
+            <Image
+              src="/logo-full.png"
+              alt="FairLeap Logo"
+              width={120}
+              height={40}
+              className="h-8 w-auto"
+            />
           </div>
           
           {/* Desktop Navigation */}
