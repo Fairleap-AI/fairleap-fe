@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 .cursor/
+
+# stagewise dev-tool files
+.stagewise/
+stagewise.config.*
+.stagewise-cache/
+stagewise-temp/
