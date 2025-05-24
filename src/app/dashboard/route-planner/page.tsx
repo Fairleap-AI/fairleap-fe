@@ -10,6 +10,13 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import GoogleMapComponent from "@/components/maps/GoogleMapComponent";
 import MapFallback from "@/components/maps/MapFallback";
 import { isGoogleMapsConfigured } from "@/config/googleMaps";
+import { 
+  calculateRouteOptimization, 
+  getTimeBasedRecommendations, 
+  generateRealTimeAlerts,
+  formatCurrency,
+  ZoneData 
+} from "@/lib/routeOptimization";
 import {
   FiMapPin,
   FiNavigation,
@@ -30,18 +37,7 @@ interface RouteData {
   durationInTraffic?: string;
   optimized?: boolean;
   totalEarnings?: number;
-  zones?: any[];
-}
-
-interface ZoneData {
-  id: number;
-  name: string;
-  demand: number;
-  traffic: number;
-  earnings: number;
-  lat: number;
-  lng: number;
-  hotspots: string[];
+  zones?: ZoneData[];
 }
 
 export default function RoutePlannerPage() {
@@ -49,19 +45,16 @@ export default function RoutePlannerPage() {
   const [endLocation, setEndLocation] = useState("");
   const [routeData, setRouteData] = useState<RouteData | null>(null);
   const [selectedZone, setSelectedZone] = useState<ZoneData | null>(null);
+  const [optimizedRoute, setOptimizedRoute] = useState<any>(null);
+  const [isMapLoaded, setIsMapLoaded] = useState(isGoogleMapsConfigured());
   const [weatherData, setWeatherData] = useState({
     temperature: 28,
     condition: "Cerah",
     rainfall: 0
   });
-  const [realTimeAlerts, setRealTimeAlerts] = useState([
-    { id: 1, type: "traffic", message: "Kemacetan berat di Jl. Sudirman", time: "2 menit lalu", severity: "high" },
-    { id: 2, type: "bonus", message: "Bonus zone aktif di Menteng (+20%)", time: "5 menit lalu", severity: "medium" },
-    { id: 3, type: "weather", message: "Hujan ringan diprediksi jam 16:00", time: "10 menit lalu", severity: "low" }
-  ]);
 
-  // Jakarta zones data (synchronized with GoogleMapComponent)
-  const jakartaZones = [
+  // Jakarta zones data (synchronized with shared optimization logic)
+  const jakartaZones: ZoneData[] = [
     {
       id: 1,
       name: "Menteng",
@@ -129,6 +122,18 @@ export default function RoutePlannerPage() {
     }
   ];
 
+  const [realTimeAlerts, setRealTimeAlerts] = useState(() => generateRealTimeAlerts(jakartaZones));
+
+  // Calculate optimal route on component mount and zone changes
+  useEffect(() => {
+    const optimized = calculateRouteOptimization(jakartaZones);
+    setOptimizedRoute(optimized);
+  }, []);
+
+  // Get time-based recommendations
+  const currentHour = new Date().getHours();
+  const timeBasedRecommendations = getTimeBasedRecommendations(jakartaZones, currentHour);
+
   const handleRouteCalculated = (route: RouteData) => {
     setRouteData(route);
   };
@@ -137,10 +142,29 @@ export default function RoutePlannerPage() {
     setSelectedZone(zone);
   };
 
+  const handleRetryMapLoad = async () => {
+    // Try to reload Google Maps
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        setIsMapLoaded(isGoogleMapsConfigured());
+        resolve(true);
+      }, 1000);
+    });
+  };
+
   const planRoute = () => {
     if (startLocation && endLocation) {
       // Route calculation will be handled by GoogleMapComponent
       console.log("Planning route from", startLocation, "to", endLocation);
+    }
+  };
+
+  const planOptimalRoute = () => {
+    if (optimizedRoute && optimizedRoute.zones.length > 0) {
+      const topZone = optimizedRoute.zones[0];
+      setStartLocation("Jakarta Pusat");
+      setEndLocation(topZone.name);
+      setSelectedZone(topZone);
     }
   };
 
@@ -158,6 +182,7 @@ export default function RoutePlannerPage() {
       case 'traffic': return FiAlertTriangle;
       case 'bonus': return FiDollarSign;
       case 'weather': return FiCloud;
+      case 'demand': return FiTrendingUp;
       default: return FiAlertTriangle;
     }
   };
@@ -165,17 +190,13 @@ export default function RoutePlannerPage() {
   // Auto-refresh data every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      // Simulate real-time updates
-      setRealTimeAlerts(prev => [
-        {
-          id: Date.now(),
-          type: "traffic",
-          message: "Update traffic: Jl. Rasuna Said lancar",
-          time: "Baru saja",
-          severity: "low"
-        },
-        ...prev.slice(0, 2)
-      ]);
+      // Generate new real-time alerts
+      const newAlerts = generateRealTimeAlerts(jakartaZones);
+      setRealTimeAlerts(newAlerts);
+      
+      // Recalculate optimization
+      const newOptimized = calculateRouteOptimization(jakartaZones);
+      setOptimizedRoute(newOptimized);
     }, 30000);
 
     return () => clearInterval(interval);
@@ -184,7 +205,7 @@ export default function RoutePlannerPage() {
   return (
     <DashboardLayout
       title="Route Planner"
-      subtitle="Optimasi rute dengan data traffic real-time"
+      subtitle="Optimasi rute dengan data traffic real-time dan AI recommendations"
       badge={{
         icon: FiMapPin,
         text: "Live Traffic"
@@ -224,8 +245,12 @@ export default function RoutePlannerPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-500">Zone Optimal</p>
-                  <p className="text-lg font-semibold text-emerald-600">Menteng</p>
-                  <p className="text-sm text-slate-600">+20% bonus</p>
+                  <p className="text-lg font-semibold text-emerald-600">
+                    {optimizedRoute?.zones[0]?.name || "Menteng"}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    +{optimizedRoute?.zones[0]?.currentBonus || 20}% bonus
+                  </p>
                 </div>
                 <FiTarget className="h-8 w-8 text-emerald-500" />
               </div>
@@ -237,8 +262,10 @@ export default function RoutePlannerPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-500">Prediksi Income</p>
-                  <p className="text-lg font-semibold text-emerald-600">Rp 325K</p>
-                  <p className="text-sm text-slate-600">Hari ini</p>
+                  <p className="text-lg font-semibold text-emerald-600">
+                    {optimizedRoute ? formatCurrency(Math.round(optimizedRoute.totalEarnings)) : "Rp 325K"}
+                  </p>
+                  <p className="text-sm text-slate-600">Optimal route</p>
                 </div>
                 <FiDollarSign className="h-8 w-8 text-emerald-500" />
               </div>
@@ -278,14 +305,56 @@ export default function RoutePlannerPage() {
                 />
               </div>
 
-              <Button 
-                onClick={planRoute}
-                className="w-full bg-emerald-600 hover:bg-emerald-700"
-                disabled={!startLocation || !endLocation}
-              >
-                <FiMapPin className="mr-2 h-4 w-4" />
-                Rencanakan Rute
-              </Button>
+              <div className="flex space-x-2">
+                <Button 
+                  onClick={planRoute}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                  disabled={!startLocation || !endLocation}
+                >
+                  <FiMapPin className="mr-2 h-4 w-4" />
+                  Plan Route
+                </Button>
+                
+                <Button 
+                  onClick={planOptimalRoute}
+                  variant="outline"
+                  className="flex-1"
+                  disabled={!optimizedRoute}
+                >
+                  <FiZap className="mr-2 h-4 w-4" />
+                  Optimal
+                </Button>
+              </div>
+
+              {/* Optimized Route Info */}
+              {optimizedRoute && (
+                <div className="p-4 bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg border border-emerald-200">
+                  <h4 className="font-semibold text-emerald-800 mb-2 flex items-center">
+                    <FiZap className="h-4 w-4 mr-1" />
+                    Route Optimal AI
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Total Jarak:</span>
+                      <span className="font-medium">{optimizedRoute.totalDistance}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Estimasi Waktu:</span>
+                      <span className="font-medium">{optimizedRoute.totalDuration}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Efisiensi:</span>
+                      <span className="font-medium text-emerald-600">{optimizedRoute.efficiency}%</span>
+                    </div>
+                    <div className="flex justify-between border-t border-emerald-300 pt-2">
+                      <span>Potensi Income:</span>
+                      <span className="font-bold text-emerald-700">
+                        {formatCurrency(Math.round(optimizedRoute.totalEarnings))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Route Information */}
               {routeData && (
@@ -312,7 +381,7 @@ export default function RoutePlannerPage() {
                       <div className="flex justify-between border-t border-emerald-300 pt-2">
                         <span>Potensi Income:</span>
                         <span className="font-bold text-emerald-700">
-                          Rp {routeData.totalEarnings.toLocaleString('id-ID')}
+                          {formatCurrency(routeData.totalEarnings)}
                         </span>
                       </div>
                     )}
@@ -335,7 +404,11 @@ export default function RoutePlannerPage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Avg Earnings:</span>
-                      <span className="font-medium">Rp {selectedZone.earnings.toLocaleString('id-ID')}</span>
+                      <span className="font-medium">{formatCurrency(selectedZone.earnings)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Peak Hours:</span>
+                      <span className="font-medium">{selectedZone.peakHours}</span>
                     </div>
                   </div>
                 </div>
@@ -359,7 +432,7 @@ export default function RoutePlannerPage() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="h-96">
-                {isGoogleMapsConfigured() ? (
+                {isMapLoaded ? (
                   <GoogleMapComponent
                     selectedZone={selectedZone}
                     onZoneSelect={handleZoneSelect}
@@ -371,6 +444,7 @@ export default function RoutePlannerPage() {
                   <MapFallback 
                     selectedZone={selectedZone}
                     onZoneSelect={handleZoneSelect}
+                    onRetryLoad={handleRetryMapLoad}
                   />
                 )}
               </div>
@@ -395,7 +469,7 @@ export default function RoutePlannerPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {realTimeAlerts.map((alert) => {
+                {realTimeAlerts.slice(0, 4).map((alert) => {
                   const IconComponent = getAlertIcon(alert.type);
                   return (
                     <Alert key={alert.id} className={getSeverityColor(alert.severity)}>
@@ -418,37 +492,57 @@ export default function RoutePlannerPage() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <FiTrendingUp className="h-5 w-5" />
-                <span>Rekomendasi Zone</span>
+                <span>Rekomendasi Zone (Time-Based)</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {jakartaZones
-                  .sort((a, b) => b.demand - a.demand)
-                  .slice(0, 3)
-                  .map((zone, index) => (
-                    <div key={zone.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                          index === 0 ? 'bg-emerald-500' : index === 1 ? 'bg-blue-500' : 'bg-orange-500'
-                        }`}>
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-medium">{zone.name}</p>
-                          <p className="text-sm text-slate-500">{zone.peakHours}</p>
-                        </div>
+                {timeBasedRecommendations.map((zone, index) => (
+                  <div 
+                    key={zone.id} 
+                    className="flex items-center justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 cursor-pointer transition-colors"
+                    onClick={() => handleZoneSelect(zone)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
+                        index === 0 ? 'bg-emerald-500' : index === 1 ? 'bg-blue-500' : 'bg-orange-500'
+                      }`}>
+                        {index + 1}
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-emerald-600">
-                          +{zone.currentBonus}%
-                        </p>
-                        <p className="text-sm text-slate-500">
-                          {zone.estimatedTrips} trips
-                        </p>
+                      <div>
+                        <p className="font-medium">{zone.name}</p>
+                        <p className="text-sm text-slate-500">{zone.peakHours}</p>
                       </div>
                     </div>
-                  ))}
+                    <div className="text-right">
+                      <p className="font-semibold text-emerald-600">
+                        +{zone.currentBonus}%
+                      </p>
+                      <p className="text-sm text-slate-500">
+                        {zone.estimatedTrips} trips
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                
+                {optimizedRoute && (
+                  <div className="mt-4 p-3 bg-gradient-to-r from-emerald-50 to-blue-50 rounded-lg border border-emerald-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-emerald-800">
+                          🎯 AI Route Score: {Math.round(optimizedRoute.score)}
+                        </p>
+                        <p className="text-xs text-emerald-600">
+                          Berdasarkan analisis demand, traffic, dan earnings
+                        </p>
+                      </div>
+                      <Button size="sm" onClick={planOptimalRoute} className="bg-emerald-600">
+                        <FiNavigation className="h-3 w-3 mr-1" />
+                        Apply
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
