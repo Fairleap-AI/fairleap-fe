@@ -12,8 +12,7 @@ import {
   getWellnessMetrics,
   getOverallWellnessScore,
   getWellnessStatus,
-  getWellnessRecommendations,
-  getRiskAssessment
+  getWellnessRecommendations
 } from "@/lib/wellnessManager";
 import {
   FiPieChart,
@@ -139,7 +138,6 @@ export default function AnalyticsPage() {
   const [hasWellnessData, setHasWellnessData] = useState(false);
   const [wellnessScore, setWellnessScore] = useState(0);
   const [realWellnessMetrics, setRealWellnessMetrics] = useState<any[]>([]);
-  const [riskData, setRiskData] = useState<any>(null);
 
   useEffect(() => {
     // Load wellness data
@@ -149,11 +147,9 @@ export default function AnalyticsPage() {
     if (hasWellness) {
       const score = getOverallWellnessScore();
       const metrics = getWellnessMetrics();
-      const risk = getRiskAssessment();
       
       setWellnessScore(score);
       setRealWellnessMetrics(metrics);
-      setRiskData(risk);
     }
   }, []);
 
@@ -222,7 +218,7 @@ export default function AnalyticsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-emerald-100 text-sm">Total Earnings</p>
-                  <p className="text-3xl font-bold">Rp {Math.round(totalEarnings / 1000000)}M</p>
+                  <p className="text-3xl font-bold">Rp {Math.round(totalEarnings / 1000000)} Juta</p>
                   <div className="flex items-center space-x-1 text-emerald-100 text-xs">
                     <FiTrendingUp className="h-3 w-3" />
                     <span>+{earningsGrowth.toFixed(1)}% dari bulan lalu</span>
@@ -310,7 +306,7 @@ export default function AnalyticsPage() {
                   <LineChart data={monthlyPerformance}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="month" stroke="#64748b" />
-                    <YAxis yAxisId="earnings" orientation="left" stroke="#64748b" tickFormatter={(value) => `${value / 1000000}M`} />
+                    <YAxis yAxisId="earnings" orientation="left" stroke="#64748b" tickFormatter={(value) => `${value / 1000000} Juta`} />
                     <YAxis yAxisId="wellness" orientation="right" stroke="#64748b" />
                     <Tooltip 
                       formatter={(value: any, name: string) => {
@@ -366,7 +362,7 @@ export default function AnalyticsPage() {
                   <BarChart data={dailyEarnings}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="day" stroke="#64748b" />
-                    <YAxis yAxisId="earnings" orientation="left" stroke="#64748b" tickFormatter={(value) => `${value / 1000}K`} />
+                    <YAxis yAxisId="earnings" orientation="left" stroke="#64748b" tickFormatter={(value) => `${value / 1000}rb`} />
                     <YAxis yAxisId="wellness" orientation="right" stroke="#64748b" />
                     <Tooltip 
                       formatter={(value: any, name: string) => {
@@ -437,7 +433,7 @@ export default function AnalyticsPage() {
                   <LineChart data={savingsData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="month" stroke="#64748b" />
-                    <YAxis stroke="#64748b" tickFormatter={(value) => `${value / 1000000}M`} />
+                    <YAxis stroke="#64748b" tickFormatter={(value) => `${value / 1000000} Juta`} />
                     <Tooltip 
                       formatter={(value: any, name: string) => {
                         if (name === 'savings') return [`Rp ${value.toLocaleString('id-ID')}`, 'Tabungan'];
@@ -550,7 +546,7 @@ export default function AnalyticsPage() {
                         <span className="text-slate-700">{item.category}</span>
                       </div>
                       <span className="font-medium text-slate-800">
-                        Rp {(item.amount / 1000000).toFixed(1)}M
+                        Rp {(item.amount / 1000000).toFixed(1)} Juta
                       </span>
                     </div>
                   ))}
@@ -582,30 +578,6 @@ export default function AnalyticsPage() {
                     
                     <Separator className="my-4" />
                     
-                    {/* Risk Assessment */}
-                    {riskData && (
-                      <div className="p-3 bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border border-red-200">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <FiShield className="h-4 w-4 text-red-600" />
-                          <span className="text-sm font-medium text-red-800">Risk Assessment</span>
-                        </div>
-                        <div className="space-y-2">
-                          {riskData.risks?.map((risk: any, index: number) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <div className={`w-2 h-2 rounded-full ${
-                                risk.level === 'High' ? 'bg-red-500' : 
-                                risk.level === 'Medium' ? 'bg-yellow-500' : 'bg-green-500'
-                              }`}></div>
-                              <span className="text-xs text-slate-700">{risk.category}: {risk.level}</span>
-                            </div>
-                          ))}
-                          <p className="text-xs text-red-700 mt-2">
-                            Overall Risk: <strong>{riskData.overallRisk}</strong>
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Wellness recommendations */}
                     <div className="p-3 bg-purple-50 rounded-lg">
                       <div className="flex items-center space-x-2 mb-2">
@@ -692,15 +664,6 @@ export default function AnalyticsPage() {
                     Tabungan meningkat 30% dalam 6 bulan. Investasi konsisten setiap bulan.
                   </p>
                 </div>
-
-                {hasWellnessData && riskData && riskData.overallRisk !== 'Low' && (
-                  <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                    <h4 className="text-sm font-medium text-yellow-800 mb-1">⚠️ Health Alert</h4>
-                    <p className="text-xs text-yellow-700">
-                      Risk level {riskData.overallRisk}. {riskData.overallRisk === 'High' ? 'Pertimbangkan break lebih sering dan konsultasi kesehatan.' : 'Monitor kondisi kesehatan secara berkala.'}
-                    </p>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
