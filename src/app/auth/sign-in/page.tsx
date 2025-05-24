@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { FcGoogle } from "react-icons/fc";
-import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
+import { IoEyeOutline, IoEyeOffOutline, IoArrowBack } from "react-icons/io5";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -74,10 +74,18 @@ export default function SignInPage() {
           className="h-full w-full object-cover rounded-2xl"
         />
       </div>
-
       {/* Right Login Form Panel */}
       <div className="flex flex-col w-full lg:w-1/2 items-center justify-center px-8 py-12 sm:px-12 md:px-16 lg:px-24 bg-white">
         <div className="w-full max-w-md">
+          {/* Back Arrow */}
+          <Link
+            href="/"
+            className="inline-flex items-center text-primary hover:text-primary/80 transition-colors mb-8"
+          >
+            <IoArrowBack className="h-5 w-5 mr-2" />
+            Back to Home
+          </Link>
+
           {/* Logo for mobile view */}
           <div className="flex lg:hidden justify-center mb-12">
             <h1 className="text-2xl font-bold text-primary">FairLeap</h1>
@@ -95,7 +103,6 @@ export default function SignInPage() {
               Enter your email and password to access your account
             </p>
           </div>
-
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -197,7 +204,6 @@ export default function SignInPage() {
               </Button>
             </form>
           </Form>
-
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -212,7 +218,7 @@ export default function SignInPage() {
               <Button
                 variant="outline"
                 disabled={isLoading}
-                className="w-full border border-border rounded-md h-12 hover:bg-muted/10 transition-colors text-primary font-medium"
+                className="w-full border border-border rounded-md h-12 hover:bg-muted/10 transition-colors text-primary font-medium hover:text-primary/80"
                 type="button"
               >
                 <FcGoogle className="mr-2 h-4 w-4" />
@@ -220,7 +226,6 @@ export default function SignInPage() {
               </Button>
             </div>
           </div>
-
           <p className="mt-10 text-center text-sm text-gray-600">
             Don&apos;t have an account?{" "}
             <Link

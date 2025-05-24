@@ -1,11 +1,20 @@
 import React from "react";
 import Link from "next/link";
+import { IoArrowBack } from "react-icons/io5";
 
 export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8">
         <div className="bg-card p-8 rounded-lg border shadow-sm">
+          <Link
+            href="/auth/sign-in"
+            className="inline-flex items-center text-primary hover:text-primary/80 transition-colors mb-8"
+          >
+            <IoArrowBack className="h-5 w-5 mr-2" />
+            Back to Sign In
+          </Link>
+
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-foreground">Reset Password</h1>
             <p className="text-muted-foreground mt-2">

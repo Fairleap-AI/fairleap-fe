@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { FcGoogle } from "react-icons/fc";
-import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
+import { IoEyeOutline, IoEyeOffOutline, IoArrowBack } from "react-icons/io5";
 
 const registerSchema = z
   .object({
@@ -109,11 +109,10 @@ export default function SignUpPage() {
     setIsLoading(true);
     try {
       console.log("Register data:", data);
-      
+
       setTimeout(() => {
         router.push("/auth/sign-in");
       }, 1000);
-      
     } catch (error) {
       console.error("Registration failed:", error);
     } finally {
@@ -139,18 +138,31 @@ export default function SignUpPage() {
           className="h-full w-full object-cover rounded-2xl"
         />
       </div>
-
-      {/* Right Register Form Panel */}
+      {/* Right Register Form Panel */}{" "}
       <div className="flex flex-col w-full lg:w-1/2 items-center justify-center px-8 py-12 sm:px-12 md:px-16 lg:px-24 bg-white overflow-y-auto">
+        {" "}
         <div className="w-full max-w-md">
-          {/* Logo for mobile view */}
+          {" "}
+          {/* Back Arrow */}{" "}
+          <Link
+            href="/"
+            className="inline-flex items-center text-primary hover:text-primary/80 transition-colors mb-8"
+          >
+            {" "}
+            <IoArrowBack className="h-5 w-5 mr-2" /> Back to Home{" "}
+          </Link>{" "}
+          {/* Logo for mobile view */}{" "}
           <div className="flex lg:hidden justify-center mb-12">
-            <h1 className="text-2xl font-bold text-primary">FairLeap</h1>
+            {" "}
+            <h1 className="text-2xl font-bold text-primary">FairLeap</h1>{" "}
           </div>
-
           {/* Icon and Welcome Text */}
           <div className="mb-10 text-left">
-            <img src="/icon-only.png" alt="FairLeap" className="h-16 w-16 mb-4" />
+            <img
+              src="/icon-only.png"
+              alt="FairLeap"
+              className="h-16 w-16 mb-4"
+            />
             <h1 className="text-3xl font-bold text-black mb-2">
               Create Your Account
             </h1>
@@ -158,7 +170,6 @@ export default function SignUpPage() {
               Sign up to start your journey with FairLeap
             </p>
           </div>
-
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -185,7 +196,9 @@ export default function SignUpPage() {
                       <Button
                         type="button"
                         onClick={handleVerifyEmail}
-                        disabled={emailVerified || verifyingEmail || !field.value}
+                        disabled={
+                          emailVerified || verifyingEmail || !field.value
+                        }
                         className={`h-12 text-white font-medium px-4 ${
                           emailVerified
                             ? "bg-green-500 hover:bg-green-600"
@@ -195,8 +208,8 @@ export default function SignUpPage() {
                         {emailVerified
                           ? "Verified"
                           : verifyingEmail
-                            ? "Verifying..."
-                            : "Verify Email"}
+                          ? "Verifying..."
+                          : "Verify Email"}
                       </Button>
                     </div>
                     <FormMessage className="text-red-600" />
@@ -268,8 +281,8 @@ export default function SignUpPage() {
                             passwordsMatch === false && field.value
                               ? "border-red-500"
                               : passwordsMatch === true && field.value
-                                ? "border-green-500"
-                                : "border-border"
+                              ? "border-green-500"
+                              : "border-border"
                           } rounded-md pr-10 h-12 focus:border-primary focus:ring-primary ${
                             !emailVerified ? "opacity-60" : ""
                           }`}
@@ -316,9 +329,11 @@ export default function SignUpPage() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel className={`text-sm font-medium text-gray-600 cursor-pointer ${
-                        !emailVerified ? "opacity-60" : ""
-                      }`}>
+                      <FormLabel
+                        className={`text-sm font-medium text-gray-600 cursor-pointer ${
+                          !emailVerified ? "opacity-60" : ""
+                        }`}
+                      >
                         I accept the{" "}
                         <Link
                           href="/terms"
@@ -342,14 +357,15 @@ export default function SignUpPage() {
 
               <Button
                 type="submit"
-                disabled={!emailVerified || isLoading || passwordsMatch === false}
+                disabled={
+                  !emailVerified || isLoading || passwordsMatch === false
+                }
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 font-medium disabled:opacity-60"
               >
                 {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
           </Form>
-
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -364,7 +380,7 @@ export default function SignUpPage() {
               <Button
                 variant="outline"
                 disabled={isLoading}
-                className="w-full border border-border rounded-md h-12 hover:bg-muted/10 transition-colors text-primary font-medium"
+                className="w-full border border-border rounded-md h-12 hover:bg-muted/10 transition-colors text-primary font-medium hover:text-primary/80"
                 type="button"
               >
                 <FcGoogle className="mr-2 h-4 w-4" />
@@ -372,7 +388,6 @@ export default function SignUpPage() {
               </Button>
             </div>
           </div>
-
           <p className="mt-10 text-center text-sm text-gray-600">
             Already have an account?{" "}
             <Link
