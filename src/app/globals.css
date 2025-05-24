@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -139,4 +141,25 @@
   }
 }
 
-@layer base {  * {    @apply border-border;  }  body {    @apply bg-background text-foreground;  }}/* Shine Animation */@keyframes shine {  0% {    background-position: 200% 0;  }  100% {    background-position: -200% 0;  }}.animate-shine {  animation: shine var(--animation-duration, 3s) infinite linear;}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Poppins", sans-serif;
+  }
+}
+
+/* Shine Animation */
+@keyframes shine {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.animate-shine {
+  animation: shine var(--animation-duration, 3s) infinite linear;
+}
