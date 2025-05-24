@@ -139,4 +139,11 @@
   }
 }
 
-@layer base {  * {    @apply border-border;  }  body {    @apply bg-background text-foreground;  }}/* Shine Animation */@keyframes shine {  0% {    background-position: 200% 0;  }  100% {    background-position: -200% 0;  }}.animate-shine {  animation: shine var(--animation-duration, 3s) infinite linear;}
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

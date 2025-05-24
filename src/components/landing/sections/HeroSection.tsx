@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";import { Button } from "@/components/ui/button";import { FiArrowRight, FiPlay, FiShield, FiTrendingUp, FiUsers, FiStar, FiZap } from "react-icons/fi";import { gsap } from "gsap";import ShinyText from "@/components/shine-effect";
+import React, { useRef, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { FiArrowRight, FiPlay, FiShield, FiTrendingUp, FiUsers, FiStar, FiZap } from "react-icons/fi";
+import { gsap } from "gsap";
 
 export default function HeroSection() {
     const heroRef = useRef<HTMLElement>(null);  const titleRef = useRef<HTMLHeadingElement>(null);  const subtitleRef = useRef<HTMLParagraphElement>(null);  const statsRef = useRef<HTMLDivElement>(null);  const trustRef = useRef<HTMLDivElement>(null);  const floatingCardsRef = useRef<HTMLDivElement>(null);  const backgroundRef = useRef<HTMLDivElement>(null);
@@ -151,7 +154,12 @@ export default function HeroSection() {
                 boxShadow: '0 25px 50px -12px rgba(0, 170, 19, 0.25)'
               }}
             >
-                            <span className="flex items-center justify-center">                <div                  className="text-white transition-transform duration-300 hover:translate-x-1 animate-shine"                  style={{                    backgroundImage: 'linear-gradient(120deg, rgba(255, 255, 255, 0.8) 40%, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0.8) 60%)',                    backgroundSize: '200% 100%',                    WebkitBackgroundClip: 'text',                    backgroundClip: 'text',                    animationDuration: '3s',                  }}                >                  Start Your Prediction                </div>                <FiArrowRight className="ml-3 transition-all duration-300 hover:translate-x-2 hover:scale-110" size={20} />              </span>
+              <span className="flex items-center justify-center">
+                <div className="text-white transition-transform duration-300 hover:translate-x-1">
+                  Start Your Prediction
+                </div>
+                <FiArrowRight className="ml-3 transition-all duration-300 hover:translate-x-2 hover:scale-110" size={20} />
+              </span>
             </Button>
 
             {/* Secondary CTA - Live Demo */}
@@ -160,7 +168,12 @@ export default function HeroSection() {
               variant="outline"
               className="relative text-lg px-12 py-7 bg-white/90 backdrop-blur-sm border-2 border-slate-300 text-slate-700 shadow-xl hover:shadow-2xl hover:bg-white hover:border-slate-400 hover:text-slate-800 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 rounded-2xl font-semibold min-w-[280px]"
             >
-                             <span className="flex items-center justify-center">                 <FiPlay className="mr-3 transition-all duration-300 hover:scale-110" size={20} />                 <div                   className="text-slate-700 transition-transform duration-300 hover:translate-x-1 animate-shine"                   style={{                     backgroundImage: 'linear-gradient(120deg, rgba(71, 85, 105, 0.7) 40%, rgba(71, 85, 105, 1) 50%, rgba(71, 85, 105, 0.7) 60%)',                     backgroundSize: '200% 100%',                     WebkitBackgroundClip: 'text',                     backgroundClip: 'text',                     animationDuration: '4s',                   }}                 >                   See Live Demo                 </div>               </span>
+              <span className="flex items-center justify-center">
+                <FiPlay className="mr-3 transition-all duration-300 hover:scale-110" size={20} />
+                <div className="text-slate-700 transition-transform duration-300 hover:translate-x-1">
+                  See Live Demo
+                </div>
+              </span>
             </Button>
           </div>
 
