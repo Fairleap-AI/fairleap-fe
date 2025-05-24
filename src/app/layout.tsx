@@ -13,10 +13,91 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title:
-    "FairLeapAI - Empowering Gojek Drivers with Smarter Earnings & Real-Time Support",
+  title: {
+    default:
+      "FairLeapAI - Empowering Gojek Drivers with Smarter Earnings & Real-Time Support",
+    template: "%s | FairLeapAI",
+  },
   description:
     "Empowers Gojek drivers with AI-driven earnings forecasts, welfare support, and personalized insights.",
+  keywords: [
+    "Gojek",
+    "Driver Earnings",
+    "AI Forecast",
+    "Welfare Support",
+    "Real-time Support",
+    "Driver Insights",
+    "FairLeapAI",
+  ],
+  authors: [{ name: "FairLeap Team" }],
+  creator: "FairLeap",
+  publisher: "FairLeap",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL("https://fairleap.ai"),
+  openGraph: {
+    title:
+      "FairLeapAI - Empowering Gojek Drivers with Smarter Earnings & Real-Time Support",
+    description:
+      "Empowers Gojek drivers with AI-driven earnings forecasts, welfare support, and personalized insights.",
+    url: "https://fairleap.ai",
+    siteName: "FairLeapAI",
+    images: [
+      {
+        url: "/web-app-manifest-512x512.png",
+        width: 512,
+        height: 512,
+        alt: "FairLeap Logo",
+      },
+      {
+        url: "/web-app-manifest-192x192.png",
+        width: 192,
+        height: 192,
+        alt: "FairLeap Logo",
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title:
+      "FairLeapAI - Empowering Gojek Drivers with Smarter Earnings & Real-Time Support",
+    description:
+      "Empowers Gojek drivers with AI-driven earnings forecasts, welfare support, and personalized insights.",
+    images: ["/web-app-manifest-512x512.png"],
+    creator: "@fairleap",
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon1.png", type: "image/png", sizes: "32x32" },
+      { url: "/icon0.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+    other: [
+      {
+        rel: "mask-icon",
+        url: "/icon0.svg",
+        color: "#00AA13",
+      },
+    ],
+  },
+  manifest: "/manifest.json",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({
