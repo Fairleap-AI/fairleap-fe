@@ -291,7 +291,7 @@ function ForgotPasswordContent() {
           </Form>
         </div>
       </div>
-    </div>
+          </div>
   );
 }
 

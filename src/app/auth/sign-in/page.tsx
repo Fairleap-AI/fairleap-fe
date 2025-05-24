@@ -212,18 +212,18 @@ function SignInContent() {
                   render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                       <FormControl>
-                        <Checkbox
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isLoading}
-                          className="border-border text-primary focus:ring-primary"
-                        />
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isLoading}
+                        className="border-border text-primary focus:ring-primary"
+                      />
                       </FormControl>
                       <div className="space-y-1 leading-none">
                         <FormLabel className="text-sm font-medium text-gray-600 cursor-pointer">
-                          Remember me
+                        Remember me
                         </FormLabel>
-                      </div>
+                    </div>
                     </FormItem>
                   )}
                 />
