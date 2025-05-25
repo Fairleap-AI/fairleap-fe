@@ -302,7 +302,7 @@ export const chatAPI = {
   createChat: async (message: string): Promise<ApiResponse<ChatResponse>> => {
     return apiCall(`${API_BASE_URL}/service/chat/create`, {
       method: 'POST',
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ query: message }),
     });
   },
 
@@ -326,7 +326,7 @@ export const chatAPI = {
       method: 'PUT',
       body: JSON.stringify({
         chatId,
-        message,
+        query: message,
       }),
     });
   },

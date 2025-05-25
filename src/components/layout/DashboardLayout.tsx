@@ -8,22 +8,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DashboardWrapper } from "@/components/DashboardWrapper";
 import { RefreshButton } from "@/components/RefreshButton";
+import { useDataIntegrationContext } from "@/providers/DataIntegrationProvider";
 import {
+  FiHome,
+  FiBarChart,
   FiDollarSign,
   FiHeart,
-  FiShield,
+  FiTrendingUp,
+  FiUser,
   FiLogOut,
-  FiSettings,
-  FiBell,
   FiMenu,
+  FiBell,
+  FiSettings,
   FiX,
-  FiSend,
-  FiHome,
-  FiPieChart,
-  FiCalendar,
-  FiBookOpen,
-  FiActivity,
-  FiUser
+  FiSend
 } from "react-icons/fi";
 
 // Navigation menu items
@@ -31,8 +29,8 @@ const menuItems = [
   { icon: FiHome, label: "Dashboard", href: "/dashboard" },
   { icon: FiDollarSign, label: "Earnings Calculator", href: "/dashboard/earnings" },
   { icon: FiHeart, label: "Wellness Check", href: "/dashboard/wellness" },
-  { icon: FiShield, label: "Financial Advisor", href: "/dashboard/financial-advisor" },
-  { icon: FiPieChart, label: "Analytics", href: "/dashboard/analytics" },
+  { icon: FiDollarSign, label: "Financial Advisor", href: "/dashboard/financial-advisor" },
+  { icon: FiBarChart, label: "Analytics", href: "/dashboard/analytics" },
 ];
 
 // Chatbot messages interface
@@ -70,6 +68,10 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
   const [newMessage, setNewMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { createNewChat, replyToChat, loadChatList, isAuthenticated, chatMessages: contextChatMessages } = useDataIntegrationContext();
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [showChatHistory, setShowChatHistory] = useState(false);
 
   // Auto scroll to bottom when new message is added
   const scrollToBottom = () => {
@@ -77,6 +79,25 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
   };
 
   useEffect(scrollToBottom, [chatMessages, isTyping]);
+
+  useEffect(() => {
+    // Update initial message based on authentication status
+    const initialMessage = isAuthenticated 
+      ? "🤖 Halo! Saya FairLeap AI Assistant. Saya siap membantu dengan prediksi AI yang dipersonalisasi berdasarkan data driving Anda!"
+      : "👋 Halo! Saya FairLeap AI Assistant. Login untuk mengakses fitur AI yang lebih canggih dengan prediksi personal!";
+    
+    setChatMessages([{
+      id: '1',
+      content: initialMessage,
+      sender: 'ai',
+      timestamp: new Date()
+    }]);
+
+    // Load chat history if authenticated
+    if (isAuthenticated) {
+      loadChatHistory();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     // Check authentication
@@ -101,7 +122,7 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
     router.push("/auth/sign-in");
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!newMessage.trim() || isTyping) return;
 
     const userMessage: ChatMessage = {
@@ -114,35 +135,94 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
     setChatMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
-    // Simulate AI response with typing indicator
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
+    try {
+      let response;
+      
+      if (isAuthenticated) {
+        // Use backend API when authenticated
+        if (currentChatId) {
+          // Reply to existing chat
+          response = await replyToChat(currentChatId, newMessage);
+        } else {
+          // Create new chat
+          response = await createNewChat(newMessage);
+          if (response && response.query) {
+            // Use the query as chat identifier, or create a proper chat session
+            setCurrentChatId(response.query);
+          }
+        }
+
+        if (response) {
+          const aiResponse: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            content: response.response || "Maaf, saya tidak dapat memproses permintaan Anda saat ini.",
+            sender: 'ai',
+            timestamp: new Date()
+          };
+          setChatMessages(prev => [...prev, aiResponse]);
+        } else {
+          // Fallback response if API fails
+          const fallbackResponse: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            content: "Maaf, terjadi kesalahan saat memproses permintaan Anda. Silakan coba lagi.",
+            sender: 'ai',
+            timestamp: new Date()
+          };
+          setChatMessages(prev => [...prev, fallbackResponse]);
+        }
+      } else {
+        // Demo mode - simple keyword-based responses
+        const demoResponse = getDemoResponse(newMessage);
+        const aiResponse: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: demoResponse,
+          sender: 'ai',
+          timestamp: new Date()
+        };
+        setChatMessages(prev => [...prev, aiResponse]);
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      // Fallback response on error
+      const errorResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: getAIResponse(newMessage),
+        content: "Maaf, terjadi kesalahan koneksi. Silakan coba lagi nanti.",
         sender: 'ai',
         timestamp: new Date()
       };
-      setChatMessages(prev => [...prev, aiResponse]);
+      setChatMessages(prev => [...prev, errorResponse]);
+    } finally {
       setIsTyping(false);
-    }, 1500);
-
-    setNewMessage('');
+      setNewMessage('');
+    }
   };
 
-  const getAIResponse = (message: string): string => {
+  const getDemoResponse = (message: string): string => {
     const lowerMessage = message.toLowerCase();
     
-    // Simple AI responses based on keywords
+    // Simple demo responses based on keywords
     if (lowerMessage.includes('penghasilan') || lowerMessage.includes('earnings') || lowerMessage.includes('income')) {
-      return "Untuk optimasi penghasilan, gunakan fitur Earnings Calculator kami. Anda juga bisa lihat pola penghasilan harian di dashboard analytics.";
+      return "🚗 Untuk optimasi penghasilan, gunakan fitur Earnings Calculator kami. Login untuk prediksi AI yang lebih akurat berdasarkan data driving Anda!";
     } else if (lowerMessage.includes('kesehatan') || lowerMessage.includes('wellness') || lowerMessage.includes('sehat')) {
-      return "Sangat bagus bahwa Anda peduli dengan kesehatan! Coba fitur Wellness Check untuk monitor kondisi harian dan dapatkan tips kesehatan yang dipersonalisasi.";
+      return "❤️ Sangat bagus bahwa Anda peduli dengan kesehatan! Coba fitur Wellness Check untuk monitor kondisi harian dan dapatkan tips kesehatan yang dipersonalisasi.";
     } else if (lowerMessage.includes('investasi') || lowerMessage.includes('financial') || lowerMessage.includes('uang')) {
-      return "Untuk perencanaan finansial dan investasi, saya sarankan konsultasi dengan Financial Advisor kami. Mereka bisa membantu strategi investasi yang sesuai profil Anda.";
+      return "💰 Untuk perencanaan finansial dan investasi, saya sarankan konsultasi dengan Financial Advisor kami. Login untuk mendapatkan saran yang dipersonalisasi!";
     } else if (lowerMessage.includes('analytics') || lowerMessage.includes('laporan') || lowerMessage.includes('data')) {
-      return "Anda bisa lihat analytics lengkap penghasilan, pola kerja, dan performa di menu Analytics. Data real-time tersedia 24/7.";
+      return "📊 Anda bisa lihat analytics lengkap penghasilan, pola kerja, dan performa di menu Analytics. Data real-time tersedia setelah login!";
+    } else if (lowerMessage.includes('login') || lowerMessage.includes('masuk') || lowerMessage.includes('daftar')) {
+      return "🔐 Silakan login untuk mengakses fitur AI yang lebih canggih dan prediksi yang dipersonalisasi berdasarkan data driving Anda!";
     } else {
-      return "Halo! Saya siap membantu Anda dengan informasi seputar penghasilan, kesehatan, investasi, dan analytics. Ada yang bisa saya bantu hari ini?";
+      return "👋 Halo! Saya FairLeap AI Assistant. Saat ini dalam mode demo. Login untuk mengakses AI yang lebih canggih dengan prediksi personal berdasarkan data driving Anda!";
+    }
+  };
+
+  const loadChatHistory = async () => {
+    try {
+      // loadChatList updates the chatMessages state in context, doesn't return data
+      await loadChatList();
+      // Chat history will be available in context.chatMessages
+    } catch (error) {
+      console.error('Failed to load chat history:', error);
     }
   };
 
@@ -281,19 +361,37 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
               <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200 flex-shrink-0 bg-gradient-to-r from-emerald-50 to-blue-50">
                 <div className="flex items-center space-x-2">
                   <img src="/Chatbot.png" alt="Chatbot" className="h-8 w-8" />
-                  <span className="font-semibold text-slate-800">AI Assistant</span>
-                  <Badge variant="outline" className="bg-emerald-100 text-emerald-700 text-xs">
-                    Online
-                  </Badge>
+                  <div>
+                    <span className="font-semibold text-slate-800">AI Assistant</span>
+                    <div className="flex items-center space-x-1">
+                      <Badge variant="outline" className="bg-emerald-100 text-emerald-700 text-xs">
+                        Online
+                      </Badge>
+                      <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                    </div>
+                  </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setRightSidebarOpen(false)}
-                  className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
-                >
-                  <FiX className="h-5 w-5" />
-                </Button>
+                <div className="flex items-center space-x-2">
+                  {isAuthenticated && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowChatHistory(!showChatHistory)}
+                      className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                      title="Chat History"
+                    >
+                      <FiMenu className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setRightSidebarOpen(false)}
+                    className="text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                  >
+                    <FiX className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
 
               {/* Chat Messages - Scrollable area */}
