@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
   tripAPI, 
-  wellnessAPI, 
   authAPI,
   llmAPI,
   chatAPI,
@@ -23,7 +22,8 @@ export const useDataIntegration = () => {
 
   // Data states - centralized untuk sinkronisasi antar page
   const [tripStats, setTripStats] = useState<TripStats[]>([]);
-  const [wellnessData, setWellnessData] = useState<WellnessData[]>([]);
+  // Wellness data disimpan di localStorage, tidak di backend
+  const [wellnessData, setWellnessData] = useState<WellnessLog[]>([]);
   const [financialAdvice, setFinancialAdvice] = useState<FinancialAdvice | null>(null);
   const [wellnessAdvice, setWellnessAdvice] = useState<WellnessAdvice | null>(null);
   const [investmentAdvice, setInvestmentAdvice] = useState<InvestmentAdvice | null>(null);
@@ -137,7 +137,7 @@ export const useDataIntegration = () => {
     }
   }, [isAuthenticated, handleError, dataCache]);
 
-  // Load wellness data
+  // Load wellness data dari localStorage (tidak dari backend)
   const loadWellnessData = useCallback(async (period: 'daily' | 'monthly' | 'yearly' = 'daily') => {
     if (!isAuthenticated) {
       setError('Authentication required');
@@ -148,23 +148,27 @@ export const useDataIntegration = () => {
     setError(null);
 
     try {
-      let response;
-      switch (period) {
-        case 'monthly':
-          response = await wellnessAPI.getMonthlyStats();
-          break;
-        case 'yearly':
-          response = await wellnessAPI.getYearlyStats();
-          break;
-        default:
-          response = await wellnessAPI.getDailyStats();
-      }
+      // Load wellness data dari localStorage
+      const storedWellnessData = localStorage.getItem('fairleap_wellness_data');
+      const wellnessLogs: WellnessLog[] = storedWellnessData ? JSON.parse(storedWellnessData) : [];
       
-      if (response.status === 'success') {
-        setWellnessData(response.data);
-      } else {
-        throw new Error(response.message);
-      }
+      // Filter berdasarkan period
+      const now = new Date();
+      const filteredData = wellnessLogs.filter(log => {
+        const logDate = new Date(log.timestamp);
+        switch (period) {
+          case 'daily':
+            return logDate.toDateString() === now.toDateString();
+          case 'monthly':
+            return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
+          case 'yearly':
+            return logDate.getFullYear() === now.getFullYear();
+          default:
+            return true;
+        }
+      });
+      
+      setWellnessData(filteredData);
     } catch (error) {
       handleError(error, 'load wellness data');
     } finally {
@@ -172,7 +176,7 @@ export const useDataIntegration = () => {
     }
   }, [isAuthenticated, handleError]);
 
-  // Submit wellness assessment
+  // Submit wellness assessment ke localStorage (tidak ke backend)
   const submitWellnessAssessment = useCallback(async (assessment: Omit<WellnessLog, 'timestamp'>) => {
     if (!isAuthenticated) {
       setError('Authentication required');
@@ -183,26 +187,33 @@ export const useDataIntegration = () => {
     setError(null);
 
     try {
-      // Calculate total score from wellness assessment
-      const totalScore = (assessment.energy_level + assessment.stress_level + 
-                         assessment.sleep_quality + assessment.physical_condition) / 4 * 100;
+      // Buat wellness log baru dengan timestamp
+      const newWellnessLog: WellnessLog = {
+        ...assessment,
+        timestamp: new Date().toISOString()
+      };
 
-      const response = await wellnessAPI.submitWellness(totalScore);
+      // Load existing data dari localStorage
+      const storedWellnessData = localStorage.getItem('fairleap_wellness_data');
+      const existingLogs: WellnessLog[] = storedWellnessData ? JSON.parse(storedWellnessData) : [];
       
-      if (response.status === 'success') {
-        // Reload wellness data after submission
-        await loadWellnessData();
-        return true;
-      } else {
-        throw new Error(response.message);
-      }
+      // Tambahkan log baru
+      const updatedLogs = [...existingLogs, newWellnessLog];
+      
+      // Simpan kembali ke localStorage
+      localStorage.setItem('fairleap_wellness_data', JSON.stringify(updatedLogs));
+      
+      // Update state
+      setWellnessData(updatedLogs);
+      
+      return true;
     } catch (error) {
       handleError(error, 'submit wellness assessment');
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, handleError, loadWellnessData]);
+  }, [isAuthenticated, handleError]);
 
   // Login function
   const login = useCallback(async (email: string, password: string) => {
@@ -389,6 +400,7 @@ export const useDataIntegration = () => {
     setError(null);
 
     try {
+      // Gunakan createChat method yang sudah tersedia
       const response = await chatAPI.createChat(message);
       
       if (response.status === 'success') {

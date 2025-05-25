@@ -215,21 +215,21 @@ export const tripAPI = {
 
   // Get daily stats
   getDailyStats: async (): Promise<ApiResponse<TripStats[]>> => {
-    return apiCall(`${API_BASE_URL}/service/trip/daily`, {
+    return apiCall(`${API_BASE_URL}/service/trip/stats/daily`, {
       method: 'GET',
     });
   },
 
   // Get monthly stats
   getMonthlyStats: async (): Promise<ApiResponse<TripStats[]>> => {
-    return apiCall(`${API_BASE_URL}/service/trip/monthly`, {
+    return apiCall(`${API_BASE_URL}/service/trip/stats/monthly`, {
       method: 'GET',
     });
   },
 
   // Get yearly stats
   getYearlyStats: async (): Promise<ApiResponse<TripStats[]>> => {
-    return apiCall(`${API_BASE_URL}/service/trip/yearly`, {
+    return apiCall(`${API_BASE_URL}/service/trip/stats/yearly`, {
       method: 'GET',
     });
   },
@@ -243,38 +243,6 @@ export const tripAPI = {
   },
 };
 
-// Wellness API calls
-export const wellnessAPI = {
-  // Submit wellness assessment (mengirim score saja sesuai backend)
-  submitWellness: async (score: number): Promise<ApiResponse> => {
-    return apiCall(`${API_BASE_URL}/service/wellness/new`, {
-      method: 'POST',
-      body: JSON.stringify({ score }),
-    });
-  },
-
-  // Get wellness daily stats
-  getDailyStats: async (): Promise<ApiResponse<WellnessData[]>> => {
-    return apiCall(`${API_BASE_URL}/service/wellness/daily`, {
-      method: 'GET',
-    });
-  },
-
-  // Get wellness monthly stats
-  getMonthlyStats: async (): Promise<ApiResponse<WellnessData[]>> => {
-    return apiCall(`${API_BASE_URL}/service/wellness/monthly`, {
-      method: 'GET',
-    });
-  },
-
-  // Get wellness yearly stats
-  getYearlyStats: async (): Promise<ApiResponse<WellnessData[]>> => {
-    return apiCall(`${API_BASE_URL}/service/wellness/yearly`, {
-      method: 'GET',
-    });
-  },
-};
-
 // LLM API calls (AI terintegrasi di backend)
 export const llmAPI = {
   // Get financial tips
@@ -283,7 +251,7 @@ export const llmAPI = {
     pengeluaran: number,
     toleransi_risiko: string
   ): Promise<ApiResponse<FinancialAdvice>> => {
-    return apiCall(`${API_BASE_URL}/service/llm/financial`, {
+    return apiCall(`${API_BASE_URL}/service/llm/fin_tips`, {
       method: 'POST',
       body: JSON.stringify({
         pendapatan,
@@ -293,7 +261,7 @@ export const llmAPI = {
     });
   },
 
-  // Get wellness recommendations
+  // Get wellness recommendations (SATU-SATUNYA endpoint wellness yang digunakan)
   getWellnessAdvice: async (
     energy_level: number,
     stress_level: number,
@@ -317,7 +285,7 @@ export const llmAPI = {
     pengeluaran: number,
     toleransi_risiko: string
   ): Promise<ApiResponse<InvestmentAdvice>> => {
-    return apiCall(`${API_BASE_URL}/service/llm/investment`, {
+    return apiCall(`${API_BASE_URL}/service/llm/invest`, {
       method: 'POST',
       body: JSON.stringify({
         pendapatan,
@@ -332,7 +300,7 @@ export const llmAPI = {
 export const chatAPI = {
   // Create new chat
   createChat: async (message: string): Promise<ApiResponse<ChatResponse>> => {
-    return apiCall(`${API_BASE_URL}/service/chatbot/create`, {
+    return apiCall(`${API_BASE_URL}/service/chat/create`, {
       method: 'POST',
       body: JSON.stringify({ message }),
     });
@@ -340,21 +308,21 @@ export const chatAPI = {
 
   // Get list of all chats
   getChatList: async (): Promise<ApiResponse<ChatMessage[]>> => {
-    return apiCall(`${API_BASE_URL}/service/chatbot/list`, {
+    return apiCall(`${API_BASE_URL}/service/chat/list`, {
       method: 'GET',
     });
   },
 
   // Read specific chat
   readChat: async (chatId: string): Promise<ApiResponse<ChatMessage>> => {
-    return apiCall(`${API_BASE_URL}/service/chatbot/read/${chatId}`, {
+    return apiCall(`${API_BASE_URL}/service/chat/read/${chatId}`, {
       method: 'GET',
     });
   },
 
   // Reply to chat
   replyToChat: async (chatId: string, message: string): Promise<ApiResponse<ChatResponse>> => {
-    return apiCall(`${API_BASE_URL}/service/chatbot/reply`, {
+    return apiCall(`${API_BASE_URL}/service/chat/reply`, {
       method: 'PUT',
       body: JSON.stringify({
         chatId,
