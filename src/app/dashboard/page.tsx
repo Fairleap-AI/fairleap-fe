@@ -8,8 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/layout/DashboardLayout";
-import { useDataSync } from "@/context/DataSyncContext";
-import { SyncIndicator } from "@/components/ui/SyncIndicator";
+import { useDataIntegrationContext } from "@/providers/DataIntegrationProvider";
+import { RefreshButton } from "@/components/RefreshButton";
 import {
   hasCompletedWellnessToday,
   getOverallWellnessScore,
@@ -72,16 +72,16 @@ export default function DashboardPage() {
   const [wellnessScore, setWellnessScore] = useState(0);
   const [wellnessStatus, setWellnessStatus] = useState<any>(null);
 
-  // Use DataSync context untuk sinkronisasi global
+  // Use DataIntegration context - TANPA auto-sync
   const {
-    globalTripStats,
-    isGlobalLoading,
-    globalError,
-    isGlobalAuthenticated,
-    lastSyncTime,
-    refreshData,
-    clearGlobalError
-  } = useDataSync();
+    tripStats,
+    isLoading,
+    error,
+    isAuthenticated,
+    cacheStatus,
+    forceRefresh,
+    clearError
+  } = useDataIntegrationContext();
 
   // Update time every minute
   useEffect(() => {
@@ -103,22 +103,15 @@ export default function DashboardPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Load dashboard data saat authenticated
-  useEffect(() => {
-    if (isGlobalAuthenticated) {
-      refreshData('dashboard');
-    }
-  }, [isGlobalAuthenticated, refreshData]);
-
-  // Calculate data from globalTripStats instead of local state
-  const todayData = globalTripStats.length > 0 ? 
-    globalTripStats[globalTripStats.length - 1] : 
+  // Calculate data from tripStats instead of globalTripStats
+  const todayData = tripStats.length > 0 ? 
+    tripStats[tripStats.length - 1] : 
     { total_earnings: 0, total_trips: 0, total_distance: 0 };
 
   const todayProgress = Math.min((todayData.total_earnings / 600000) * 100, 100); // Target Rp 600K
 
-  // Calculate weekly totals from global data
-  const weeklyTotals = globalTripStats.reduce((acc, day) => ({
+  // Calculate weekly totals from trip data
+  const weeklyTotals = tripStats.reduce((acc: any, day: any) => ({
     earnings: acc.earnings + day.total_earnings,
     trips: acc.trips + day.total_trips,
     distance: acc.distance + day.total_distance
@@ -126,6 +119,38 @@ export default function DashboardPage() {
 
   const averageTripValue = weeklyTotals.trips > 0 ? 
     Math.round(weeklyTotals.earnings / weeklyTotals.trips) : 0;
+
+  // Get last update time from cache
+  const getLastSyncTime = () => {
+    const updates: (Date | null)[] = [];
+    
+    // Collect all lastUpdated timestamps from nested cache structure
+    if (cacheStatus.tripStats) {
+      updates.push(cacheStatus.tripStats.daily.lastUpdated);
+      updates.push(cacheStatus.tripStats.monthly.lastUpdated);
+      updates.push(cacheStatus.tripStats.yearly.lastUpdated);
+    }
+    
+    if (cacheStatus.financialAdvice) {
+      updates.push(cacheStatus.financialAdvice.lastUpdated);
+    }
+    
+    if (cacheStatus.wellnessAdvice) {
+      updates.push(cacheStatus.wellnessAdvice.lastUpdated);
+    }
+    
+    if (cacheStatus.investmentAdvice) {
+      updates.push(cacheStatus.investmentAdvice.lastUpdated);
+    }
+    
+    const validUpdates = updates
+      .filter(Boolean)
+      .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime());
+    
+    return validUpdates.length > 0 ? validUpdates[0] : null;
+  };
+
+  const lastSyncTime = getLastSyncTime();
 
   return (
     <DashboardLayout
@@ -137,38 +162,26 @@ export default function DashboardPage() {
         day: 'numeric' 
       })}`}
       badge={{
-        icon: isGlobalAuthenticated ? FiWifi : FiWifiOff,
+        icon: isAuthenticated ? FiWifi : FiWifiOff,
         text: lastSyncTime ? 
           `Last sync: ${lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : 
           "No sync"
       }}
     >
       <div className="p-6 space-y-6">
-        {/* Global Sync Indicator */}
-        <SyncIndicator pageType="dashboard" showDetails={true} />
-
         {/* Header dengan Refresh Button */}
-        {isGlobalAuthenticated && (
+        {isAuthenticated && (
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-bold text-slate-800">Dashboard Overview</h1>
               <p className="text-slate-600">Data real-time dari backend FairLeap</p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => refreshData('dashboard')}
-              disabled={isGlobalLoading}
-              className="flex items-center space-x-2"
-            >
-              <FiRefreshCw className={`h-4 w-4 ${isGlobalLoading ? 'animate-spin' : ''}`} />
-              <span>Refresh Data</span>
-            </Button>
+            <RefreshButton showText={true} />
           </div>
         )}
 
         {/* Connection Status Alert */}
-        {!isGlobalAuthenticated && (
+        {!isAuthenticated && (
           <Alert className="bg-amber-50 border-amber-200">
             <FiWifiOff className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
@@ -178,15 +191,15 @@ export default function DashboardPage() {
         )}
 
         {/* Error Alert */}
-        {globalError && (
+        {error && (
           <Alert className="bg-red-50 border-red-200">
             <FiAlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800 flex items-center justify-between">
-              <span><strong>Error:</strong> {globalError}</span>
+              <span><strong>Error:</strong> {error}</span>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={clearGlobalError}
+                onClick={clearError}
                 className="ml-2"
               >
                 Dismiss
@@ -237,7 +250,7 @@ export default function DashboardPage() {
                     {formatCurrency(weeklyTotals.earnings)}
                   </p>
                   <p className="text-green-600 text-xs">
-                    {isGlobalAuthenticated ? "Real-time data" : "Cached data"}
+                    {isAuthenticated ? "Real-time data" : "Cached data"}
                   </p>
                 </div>
                 <FiTrendingUp className="h-8 w-8 text-green-500" />
@@ -277,13 +290,13 @@ export default function DashboardPage() {
               <CardTitle className="flex items-center space-x-2">
                 <FiTrendingUp className="h-5 w-5" />
                 <span>Weekly Earnings Trend</span>
-                {isGlobalLoading && <FiRefreshCw className="h-4 w-4 animate-spin text-blue-500" />}
+                {isLoading && <FiRefreshCw className="h-4 w-4 animate-spin text-blue-500" />}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {globalTripStats.length > 0 ? (
+              {tripStats.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={globalTripStats}>
+                  <LineChart data={tripStats}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="day" stroke="#64748b" />
                     <YAxis stroke="#64748b" />
@@ -313,7 +326,7 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               ) : (
                 <div className="h-[300px] flex items-center justify-center text-slate-500">
-                  {isGlobalLoading ? (
+                  {isLoading ? (
                     <div className="text-center">
                       <FiRefreshCw className="h-8 w-8 animate-spin mx-auto mb-2" />
                       <p>Loading earnings data...</p>
@@ -322,7 +335,7 @@ export default function DashboardPage() {
                     <div className="text-center">
                       <FiActivity className="h-8 w-8 mx-auto mb-2" />
                       <p>No earnings data available</p>
-                      {!isGlobalAuthenticated && (
+                      {!isAuthenticated && (
                         <p className="text-sm mt-1">Login to see your real data</p>
                       )}
                     </div>
@@ -454,7 +467,7 @@ export default function DashboardPage() {
                 </AlertDescription>
               </Alert>
 
-              {!isGlobalAuthenticated && (
+              {!isAuthenticated && (
                 <Alert className="bg-purple-50 border-purple-200">
                   <FiWifiOff className="h-4 w-4 text-purple-600" />
                   <AlertDescription className="text-purple-800">

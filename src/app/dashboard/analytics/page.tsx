@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useDataSync } from "@/context/DataSyncContext";
-import { SyncIndicator } from "@/components/ui/SyncIndicator";
+import { useDataIntegrationContext } from "@/providers/DataIntegrationProvider";
+import { RefreshButton } from "@/components/RefreshButton";
 import {
   hasCompletedWellnessToday,
   getOverallWellnessScore,
@@ -142,16 +142,15 @@ export default function AnalyticsPage() {
   const [wellnessScore, setWellnessScore] = useState(0);
   const [realWellnessMetrics, setRealWellnessMetrics] = useState<any[]>([]);
 
-  // Use DataSync context untuk sinkronisasi global  
+  // Use DataIntegration context - TANPA auto-sync
   const {
-    globalTripStats,
-    isGlobalLoading,
-    globalError,
-    isGlobalAuthenticated,
-    lastSyncTime,
-    refreshData,
-    clearGlobalError
-  } = useDataSync();
+    tripStats,
+    isLoading,
+    error,
+    isAuthenticated,
+    loadTripStats,
+    clearError
+  } = useDataIntegrationContext();
 
   useEffect(() => {
     // Load wellness data
@@ -166,26 +165,17 @@ export default function AnalyticsPage() {
     }
   }, []);
 
-  // Load analytics data saat component mount
-  useEffect(() => {
-    if (isGlobalAuthenticated) {
-      refreshData('analytics');
-    }
-  }, [isGlobalAuthenticated, refreshData]);
-
-  // Handle time filter change
+  // Handle time filter change - TANPA auto-refresh
   const handleTimeFilterChange = (filter: string) => {
     setTimeFilter(filter);
-    // Refresh data dengan periode baru jika diperlukan
-    if (isGlobalAuthenticated) {
-      refreshData('analytics');
-    }
+    // Manual refresh jika diperlukan
+    // User bisa klik refresh button untuk update data
   };
 
   // Transform backend data or use mock data as fallback
   const getDisplayData = () => {
-    if (isGlobalAuthenticated && globalTripStats.length > 0) {
-      return globalTripStats;
+    if (isAuthenticated && tripStats.length > 0) {
+      return tripStats;
     }
     
     // Fallback ke mock data
@@ -194,13 +184,13 @@ export default function AnalyticsPage() {
   };
 
   const displayData = getDisplayData();
-  const isRealData = isGlobalAuthenticated && globalTripStats.length > 0;
+  const isRealData = isAuthenticated && tripStats.length > 0;
 
   // Calculate key metrics from display data
-  const totalEarnings = displayData.reduce((sum, month) => sum + month.total_earnings, 0);
-  const totalTrips = displayData.reduce((sum, month) => sum + month.total_trips, 0);
-  const avgRating = displayData.reduce((sum, month) => sum + (month.rating || 4.5), 0) / displayData.length;
-  const totalDistance = displayData.reduce((sum, month) => sum + (month.total_distance || 0), 0);
+  const totalEarnings = displayData.reduce((sum: number, month: any) => sum + month.total_earnings, 0);
+  const totalTrips = displayData.reduce((sum: number, month: any) => sum + month.total_trips, 0);
+  const avgRating = displayData.reduce((sum: number, month: any) => sum + (month.rating || 4.5), 0) / displayData.length;
+  const totalDistance = displayData.reduce((sum: number, month: any) => sum + (month.total_distance || 0), 0);
   
   // Use real wellness score if available, otherwise use mock data for non-wellness calculations
   const avgWellness = hasWellnessData ? wellnessScore : 0;
@@ -219,44 +209,50 @@ export default function AnalyticsPage() {
       title="Analytics"
       subtitle="Analisis mendalam performa dan tren penghasilan"
       badge={{
-        icon: isGlobalAuthenticated ? FiWifi : FiWifiOff,
-        text: lastSyncTime ? 
-          `Last sync: ${lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : 
-          "No sync"
+        icon: isAuthenticated ? FiWifi : FiWifiOff,
+        text: "No sync"
       }}
     >
-      <div className="p-6">
-        {/* Global Sync Indicator */}
-        <SyncIndicator pageType="analytics" showDetails={false} />
-
-        {/* Time Filter Controls */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Performance Analytics</h1>
-          <div className="flex items-center space-x-2">
-            {['1m', '3m', '6m', '1y'].map((filter) => (
-              <Button
-                key={filter}
-                variant={timeFilter === filter ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleTimeFilterChange(filter)}
-              >
-                {filter}
-              </Button>
-            ))}
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => refreshData('analytics')}
-              disabled={isGlobalLoading}
-            >
-              <FiRefreshCw className={`h-4 w-4 ${isGlobalLoading ? 'animate-spin' : ''}`} />
-            </Button>
+      <div className="p-6 space-y-6">
+        {/* Header dengan Filter dan Refresh */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Analytics Dashboard</h1>
+            <p className="text-slate-600">Analisis mendalam performa dan tren penghasilan</p>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            {/* Time Filter Buttons */}
+            <div className="flex bg-slate-100 rounded-lg p-1">
+              {[
+                { key: "1w", label: "1W" },
+                { key: "1m", label: "1M" },
+                { key: "3m", label: "3M" },
+                { key: "1y", label: "1Y" }
+              ].map((filter) => (
+                <Button
+                  key={filter.key}
+                  variant={timeFilter === filter.key ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => handleTimeFilterChange(filter.key)}
+                  className={`px-3 py-1 text-xs ${
+                    timeFilter === filter.key 
+                      ? "bg-white shadow-sm" 
+                      : "hover:bg-slate-200"
+                  }`}
+                >
+                  {filter.label}
+                </Button>
+              ))}
+            </div>
+            
+            <RefreshButton showText={false} />
           </div>
         </div>
 
         {/* Connection Status and Loading Alerts */}
-        {!isGlobalAuthenticated && (
-          <Alert className="bg-amber-50 border-amber-200 mb-6">
+        {!isAuthenticated && (
+          <Alert className="bg-amber-50 border-amber-200">
             <FiWifiOff className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
               <strong>Offline Mode:</strong> Menampilkan data mock untuk demo. Login untuk melihat data real-time dari backend.
@@ -264,15 +260,15 @@ export default function AnalyticsPage() {
           </Alert>
         )}
 
-        {globalError && (
-          <Alert className="bg-red-50 border-red-200 mb-6">
+        {error && (
+          <Alert className="bg-red-50 border-red-200">
             <FiAlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800 flex items-center justify-between">
-              <span><strong>Error:</strong> {globalError}</span>
+              <span><strong>Error:</strong> {error}</span>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={clearGlobalError}
+                onClick={clearError}
                 className="ml-2"
               >
                 Dismiss
@@ -281,8 +277,8 @@ export default function AnalyticsPage() {
           </Alert>
         )}
 
-        {isGlobalLoading && (
-          <Alert className="bg-blue-50 border-blue-200 mb-6">
+        {isLoading && (
+          <Alert className="bg-blue-50 border-blue-200">
             <FiRefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
             <AlertDescription className="text-blue-800">
               <strong>Loading:</strong> Mengambil data terbaru dari server...

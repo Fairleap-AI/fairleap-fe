@@ -9,8 +9,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { useDataSync } from "@/context/DataSyncContext";
-import { SyncIndicator } from "@/components/ui/SyncIndicator";
+import { useDataIntegrationContext } from "@/providers/DataIntegrationProvider";
+import { RefreshButton } from "@/components/RefreshButton";
 import {
   FiHeart,
   FiActivity,
@@ -75,21 +75,18 @@ export default function WellnessCheckPage() {
   const [existingData, setExistingData] = useState<WellnessData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Use DataSync context untuk sinkronisasi global
+  // Use DataIntegration context - TANPA auto-sync
   const {
-    globalWellnessData,
-    globalWellnessAdvice,
-    isGlobalLoading,
-    globalError,
-    isGlobalAuthenticated,
-    lastSyncTime,
-    refreshData,
+    wellnessData,
+    wellnessAdvice,
+    isLoading,
+    error,
+    isAuthenticated,
     submitWellnessAssessment,
-    broadcastUpdate,
-    clearGlobalError
-  } = useDataSync();
+    clearError
+  } = useDataIntegrationContext();
 
-  // Load wellness data saat component mount
+  // Load wellness data saat component mount - TANPA auto-refresh
   useEffect(() => {
     // Load local data first for immediate display
     const localData = loadWellnessData();
@@ -105,11 +102,11 @@ export default function WellnessCheckPage() {
       setAnswers(answersMap);
     }
 
-    // Load backend data jika authenticated
-    if (isGlobalAuthenticated) {
-      refreshData('wellness');
-    }
-  }, [isGlobalAuthenticated, refreshData]);
+    // HAPUS auto-refresh - hanya manual refresh
+    // if (isAuthenticated) {
+    //   refreshData('wellness');
+    // }
+  }, []); // Hapus dependency yang menyebabkan auto-refresh
 
   const handleAnswer = (questionId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -153,7 +150,7 @@ export default function WellnessCheckPage() {
 
       // Submit ke backend jika authenticated
       let success = false;
-      if (isGlobalAuthenticated) {
+      if (isAuthenticated) {
         const assessmentData = {
           energy_level: wellnessAnswers['energy']?.score || 0,
           stress_level: wellnessAnswers['stress']?.score || 0,
@@ -162,14 +159,6 @@ export default function WellnessCheckPage() {
         };
         
         success = await submitWellnessAssessment(assessmentData);
-      }
-
-      // Broadcast update ke context untuk sinkronisasi antar page
-      if (isGlobalAuthenticated && success) {
-        broadcastUpdate('wellness_data', wellnessDataLocal);
-        if (globalWellnessAdvice) {
-          broadcastUpdate('wellness_advice', globalWellnessAdvice);
-        }
       }
 
       // Update state
@@ -216,16 +205,18 @@ export default function WellnessCheckPage() {
         "Monitor kesehatan harian untuk performa optimal"
       }
       badge={{
-        icon: isGlobalAuthenticated ? FiWifi : FiWifiOff,
-        text: isCompleted ? `Score: ${wellnessScore}%` : (isGlobalAuthenticated ? "Connected" : "Offline Mode")
+        icon: isAuthenticated ? FiWifi : FiWifiOff,
+        text: isCompleted ? `Score: ${wellnessScore}%` : (isAuthenticated ? "Connected" : "Offline Mode")
       }}
     >
       <div className="p-6">
-        {/* Global Sync Indicator */}
-        <SyncIndicator pageType="wellness" showDetails={false} />
+        {/* Refresh Button */}
+        <div className="mb-6">
+          <RefreshButton showText={false} />
+        </div>
 
         {/* Connection Status Alert */}
-        {!isGlobalAuthenticated && (
+        {!isAuthenticated && (
           <Alert className="bg-amber-50 border-amber-200 mb-6">
             <FiWifiOff className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
@@ -235,15 +226,15 @@ export default function WellnessCheckPage() {
         )}
 
         {/* Error Alert */}
-        {globalError && (
+        {error && (
           <Alert className="bg-red-50 border-red-200 mb-6">
             <FiAlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800 flex items-center justify-between">
-              <span><strong>Error:</strong> {globalError}</span>
+              <span><strong>Error:</strong> {error}</span>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={clearGlobalError}
+                onClick={clearError}
                 className="ml-2"
               >
                 Dismiss
@@ -253,7 +244,7 @@ export default function WellnessCheckPage() {
         )}
 
         {/* Loading indicator untuk backend operations */}
-        {(isGlobalLoading || isSubmitting) && (
+        {(isLoading || isSubmitting) && (
           <Alert className="bg-blue-50 border-blue-200 mb-6">
             <FiRefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
             <AlertDescription className="text-blue-800">
@@ -263,11 +254,11 @@ export default function WellnessCheckPage() {
         )}
 
         {/* AI Recommendations dari backend menggunakan global state */}
-        {isGlobalAuthenticated && globalWellnessAdvice && (
+        {isAuthenticated && wellnessAdvice && (
           <Alert className="bg-green-50 border-green-200 mb-6">
             <FiHeart className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
-              <strong>AI Recommendation:</strong> {globalWellnessAdvice.rest_advice}
+              <strong>AI Recommendation:</strong> {wellnessAdvice.rest_advice}
             </AlertDescription>
           </Alert>
         )}

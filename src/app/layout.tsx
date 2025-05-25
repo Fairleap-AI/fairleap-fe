@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 import { DataSyncProvider } from "@/context/DataSyncContext";
+import { DataIntegrationProvider } from "@/providers/DataIntegrationProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -122,9 +123,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <DataSyncProvider>
-          <ToastProvider>{children}</ToastProvider>
-        </DataSyncProvider>
+        <DataIntegrationProvider>
+          <DataSyncProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </DataSyncProvider>
+        </DataIntegrationProvider>
       </body>
     </html>
   );

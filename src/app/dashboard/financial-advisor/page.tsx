@@ -11,7 +11,8 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useDataSync } from "@/context/DataSyncContext";
+import { useDataIntegrationContext } from "@/providers/DataIntegrationProvider";
+import { RefreshButton } from "@/components/RefreshButton";
 import {
   FiShield,
   FiTarget,
@@ -109,40 +110,18 @@ export default function FinancialAdvisorPage() {
   const [emergencyFund, setEmergencyFund] = useState(6);
   const [isSubmittingAdvice, setIsSubmittingAdvice] = useState(false);
 
-  // Use DataSync context untuk sinkronisasi global
+  // Use DataIntegration context - TANPA auto-sync
   const {
-    globalFinancialAdvice,
-    globalInvestmentAdvice,
-    globalTripStats,
-    isGlobalLoading,
-    globalError,
-    isGlobalAuthenticated,
-    lastSyncTime,
-    refreshData,
+    financialAdvice,
+    investmentAdvice,
+    tripStats,
+    isLoading,
+    error,
+    isAuthenticated,
     getFinancialAdvice,
     getInvestmentAdvice,
-    clearGlobalError
-  } = useDataSync();
-
-  // Load financial data dan advice saat component mount
-  useEffect(() => {
-    if (isGlobalAuthenticated) {
-      refreshData('financial');
-    }
-  }, [isGlobalAuthenticated, refreshData]);
-
-  // Auto-refresh financial advice saat input berubah
-  useEffect(() => {
-    if (isGlobalAuthenticated && pendapatan && pengeluaran && toleransiRisiko) {
-      const pendapatanNum = parseInt(pendapatan.replace(/\D/g, '')) || 0;
-      const pengeluaranNum = parseInt(pengeluaran.replace(/\D/g, '')) || 0;
-      
-      if (pendapatanNum > 0 && pengeluaranNum > 0) {
-        getFinancialAdvice(pendapatanNum, pengeluaranNum, toleransiRisiko);
-        getInvestmentAdvice(pendapatanNum, pengeluaranNum, toleransiRisiko);
-      }
-    }
-  }, [isGlobalAuthenticated, pendapatan, pengeluaran, toleransiRisiko, getFinancialAdvice, getInvestmentAdvice]);
+    clearError
+  } = useDataIntegrationContext();
 
   // Manual refresh financial advice
   const handleRefreshAdvice = async () => {
@@ -160,13 +139,13 @@ export default function FinancialAdvisorPage() {
     }
   };
 
-  // Calculate financial health menggunakan globalTripStats
+  // Calculate financial health menggunakan tripStats
   const monthlyIncome = parseInt(pendapatan.replace(/\D/g, '')) || 10200000;
   const monthlyExpenses = parseInt(pengeluaran.replace(/\D/g, '')) || 7200000;
   
-  // Gunakan data dari backend jika ada
-  const actualIncome = globalTripStats.length > 0 ? 
-    globalTripStats.reduce((sum, stat) => sum + stat.total_earnings, 0) / globalTripStats.length : 
+  // Gunakan data dari backend jika ada - dengan safe check
+  const actualIncome = tripStats && tripStats.length > 0 ? 
+    tripStats.reduce((sum: number, stat: any) => sum + stat.total_earnings, 0) / tripStats.length : 
     monthlyIncome;
   const actualExpenses = monthlyExpenses;
   
@@ -184,13 +163,18 @@ export default function FinancialAdvisorPage() {
     <DashboardLayout
       title="Financial Advisor"
       badge={{
-        icon: isGlobalAuthenticated ? FiWifi : FiWifiOff,
+        icon: isAuthenticated ? FiWifi : FiWifiOff,
         text: `Financial Health: ${Math.round(financialHealthScore)}%`
       }}
     >
       <div className="p-6">
+        {/* Refresh Button */}
+        <div className="mb-6">
+          <RefreshButton showText={false} />
+        </div>
+
         {/* Connection Status Alert */}
-        {!isGlobalAuthenticated && (
+        {!isAuthenticated && (
           <Alert className="bg-amber-50 border-amber-200 mb-6">
             <FiWifiOff className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
@@ -200,15 +184,15 @@ export default function FinancialAdvisorPage() {
         )}
 
         {/* Error Alert */}
-        {globalError && (
+        {error && (
           <Alert className="bg-red-50 border-red-200 mb-6">
             <FiAlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800 flex items-center justify-between">
-              <span><strong>Error:</strong> {globalError}</span>
+              <span><strong>Error:</strong> {error}</span>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={clearGlobalError}
+                onClick={clearError}
                 className="ml-2"
               >
                 Dismiss
@@ -218,7 +202,7 @@ export default function FinancialAdvisorPage() {
         )}
 
         {/* Loading indicator */}
-        {(isGlobalLoading || isSubmittingAdvice) && (
+        {(isLoading || isSubmittingAdvice) && (
           <Alert className="bg-blue-50 border-blue-200 mb-6">
             <FiRefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
             <AlertDescription className="text-blue-800">
@@ -228,7 +212,7 @@ export default function FinancialAdvisorPage() {
         )}
 
         {/* Financial Input Form */}
-        {isGlobalAuthenticated && (
+        {isAuthenticated && (
           <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm mb-8">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -294,14 +278,14 @@ export default function FinancialAdvisorPage() {
         )}
 
         {/* AI Financial Advice dari Backend */}
-        {isGlobalAuthenticated && globalFinancialAdvice && (
+        {isAuthenticated && financialAdvice && (
           <Alert className="bg-green-50 border-green-200 mb-6">
             <FiShield className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
               <div className="space-y-2">
-                <p><strong>💰 Strategi Menabung:</strong> {globalFinancialAdvice.saving_strategies}</p>
-                <p><strong>📈 Strategi Investasi:</strong> {globalFinancialAdvice.investment_strategies}</p>
-                <p><strong>🛡️ Strategi Asuransi:</strong> {globalFinancialAdvice.insurance_strategies}</p>
+                <p><strong>💰 Strategi Menabung:</strong> {financialAdvice.saving_strategies}</p>
+                <p><strong>📈 Strategi Investasi:</strong> {financialAdvice.investment_strategies}</p>
+                <p><strong>🛡️ Strategi Asuransi:</strong> {financialAdvice.insurance_strategies}</p>
               </div>
             </AlertDescription>
           </Alert>

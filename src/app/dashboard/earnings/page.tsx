@@ -10,8 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { useDataSync } from "@/context/DataSyncContext";
-import { SyncIndicator } from "@/components/ui/SyncIndicator";
+import { useDataIntegrationContext } from "@/providers/DataIntegrationProvider";
+import { RefreshButton } from "@/components/RefreshButton";
 import {
   FiDollarSign,
   FiClock,
@@ -70,33 +70,24 @@ export default function EarningsCalculatorPage() {
   const [workingDays, setWorkingDays] = useState([6]);
   const [selectedArea, setSelectedArea] = useState("senayan");
 
-  // Use DataSync context untuk sinkronisasi global
+  // Use DataIntegration context - TANPA auto-sync
   const {
-    globalTripStats,
-    isGlobalLoading,
-    globalError,
-    isGlobalAuthenticated,
-    lastSyncTime,
-    refreshData,
-    clearGlobalError
-  } = useDataSync();
-
-  // Load trip data untuk prediksi yang akurat
-  useEffect(() => {
-    if (isGlobalAuthenticated) {
-      refreshData('earnings');
-    }
-  }, [isGlobalAuthenticated, refreshData]);
+    tripStats,
+    isLoading,
+    error,
+    isAuthenticated,
+    clearError
+  } = useDataIntegrationContext();
 
   const calculateEarnings = () => {
     let baseEarning = 35000; // Default base earning per hour
     let efficiency = 0.85; // Default efficiency factor
     
     // Use backend data for more accurate predictions if available
-    if (isGlobalAuthenticated && globalTripStats.length > 0) {
-      // Calculate average earning dari globalTripStats
-      const totalEarnings = globalTripStats.reduce((sum, stat) => sum + stat.total_earnings, 0);
-      const totalTrips = globalTripStats.reduce((sum, stat) => sum + stat.total_trips, 0);
+    if (isAuthenticated && tripStats.length > 0) {
+      // Calculate average earning dari tripStats
+      const totalEarnings = tripStats.reduce((sum: number, stat: any) => sum + stat.total_earnings, 0);
+      const totalTrips = tripStats.reduce((sum: number, stat: any) => sum + stat.total_trips, 0);
       const avgEarningsPerTrip = totalTrips > 0 ? totalEarnings / totalTrips : 0;
       
       baseEarning = avgEarningsPerTrip * 2.5; // Estimate trips per hour
@@ -114,8 +105,8 @@ export default function EarningsCalculatorPage() {
 
     // Calculate confidence based on data availability
     let confidence = 75; // Base confidence
-    if (isGlobalAuthenticated && globalTripStats.length > 0) {
-      const totalTrips = globalTripStats.reduce((sum, stat) => sum + stat.total_trips, 0);
+    if (isAuthenticated && tripStats.length > 0) {
+      const totalTrips = tripStats.reduce((sum: number, stat: any) => sum + stat.total_trips, 0);
       confidence = Math.min(95, 85 + (totalTrips / 100) * 5); // Higher confidence with more trip data
     }
     confidence = Math.min(confidence, 75 + (hoursPerDay * 2) + (daysPerWeek * 1.5));
@@ -125,7 +116,7 @@ export default function EarningsCalculatorPage() {
       weekly: Math.round(weeklyEarnings),
       monthly: Math.round(monthlyEarnings),
       confidence: confidence,
-      dataSource: isGlobalAuthenticated && globalTripStats.length > 0 ? 'Backend Data' : 'Estimation'
+      dataSource: isAuthenticated && tripStats.length > 0 ? 'Backend Data' : 'Estimation'
     };
   };
 
@@ -135,14 +126,14 @@ export default function EarningsCalculatorPage() {
     return Array.from({ length: 30 }, (_, i) => {
       // Use backend trend if available
       let baseTrend = 1 + (i / 200); // Default trend
-      if (isGlobalAuthenticated && globalTripStats.length > 7) {
-        // Calculate trend dari recent globalTripStats
-        const recentData = globalTripStats.slice(-7);
-        const earlierData = globalTripStats.slice(-14, -7);
+      if (isAuthenticated && tripStats.length > 7) {
+        // Calculate trend dari recent tripStats
+        const recentData = tripStats.slice(-7);
+        const earlierData = tripStats.slice(-14, -7);
         
         if (earlierData.length > 0) {
-          const recentAvg = recentData.reduce((sum, stat) => sum + stat.total_earnings, 0) / recentData.length;
-          const earlierAvg = earlierData.reduce((sum, stat) => sum + stat.total_earnings, 0) / earlierData.length;
+          const recentAvg = recentData.reduce((sum: number, stat: any) => sum + stat.total_earnings, 0) / recentData.length;
+          const earlierAvg = earlierData.reduce((sum: number, stat: any) => sum + stat.total_earnings, 0) / earlierData.length;
           const growthRate = (recentAvg - earlierAvg) / earlierAvg;
           baseTrend = 1 + (i * growthRate / 30);
         }
@@ -162,29 +153,31 @@ export default function EarningsCalculatorPage() {
     <DashboardLayout
       title="Earnings Calculator"
       badge={{
-        icon: isGlobalAuthenticated ? FiWifi : FiWifiOff,
+        icon: isAuthenticated ? FiWifi : FiWifiOff,
         text: `AI Prediction: ${earnings.confidence.toFixed(0)}% Accurate`
       }}
     >
       <div className="p-6">
-        {/* Global Sync Indicator */}
-        <SyncIndicator pageType="earnings" showDetails={false} />
+        {/* Refresh Button */}
+        <div className="mb-6">
+          <RefreshButton showText={false} />
+        </div>
 
         {/* Enhanced Prediction Alert */}
-        {isGlobalAuthenticated && (
+        {isAuthenticated && (
           <Alert className="bg-green-50 border-green-200 mb-6">
             <FiTrendingUp className="h-4 w-4 text-green-600" />
             <AlertDescription className="text-green-800">
               <strong>Enhanced Prediction:</strong> Menggunakan data {earnings.dataSource} untuk akurasi {earnings.confidence.toFixed(0)}%.
-              {globalTripStats.length > 0 && (
-                <span className="ml-2">Berdasarkan {globalTripStats.reduce((sum, stat) => sum + stat.total_trips, 0)} trips historical.</span>
+              {tripStats.length > 0 && (
+                <span className="ml-2">Berdasarkan {tripStats.reduce((sum, stat) => sum + stat.total_trips, 0)} trips historical.</span>
               )}
             </AlertDescription>
           </Alert>
         )}
 
         {/* Connection Status Alert */}
-        {!isGlobalAuthenticated && (
+        {!isAuthenticated && (
           <Alert className="bg-amber-50 border-amber-200 mb-6">
             <FiWifiOff className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
@@ -194,15 +187,15 @@ export default function EarningsCalculatorPage() {
         )}
 
         {/* Error Alert */}
-        {globalError && (
+        {error && (
           <Alert className="bg-red-50 border-red-200 mb-6">
             <FiAlertTriangle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800 flex items-center justify-between">
-              <span><strong>Error:</strong> {globalError}</span>
+              <span><strong>Error:</strong> {error}</span>
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={clearGlobalError}
+                onClick={clearError}
                 className="ml-2"
               >
                 Dismiss
@@ -212,7 +205,7 @@ export default function EarningsCalculatorPage() {
         )}
 
         {/* Loading indicator */}
-        {isGlobalLoading && (
+        {isLoading && (
           <Alert className="bg-blue-50 border-blue-200 mb-6">
             <FiRefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
             <AlertDescription className="text-blue-800">
