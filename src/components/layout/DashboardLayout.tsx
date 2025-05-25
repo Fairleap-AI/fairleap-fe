@@ -135,36 +135,43 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
     setChatMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
+    // Store the message for fallback use
+    const messageForFallback = newMessage;
+
     try {
       let response;
       
       if (isAuthenticated) {
-        // Use backend API when authenticated
-        if (currentChatId) {
-          // Reply to existing chat
-          response = await replyToChat(currentChatId, newMessage);
-        } else {
-          // Create new chat
-          response = await createNewChat(newMessage);
-          if (response && response.query) {
-            // Use the query as chat identifier, or create a proper chat session
-            setCurrentChatId(response.query);
-          }
+        // Use backend API when authenticated with 3 second timeout
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('API timeout after 3 seconds')), 3000);
+        });
+
+        const apiPromise = currentChatId ? 
+          replyToChat(currentChatId, newMessage) : 
+          createNewChat(newMessage);
+
+        // Race between API call and timeout
+        response = await Promise.race([apiPromise, timeoutPromise]);
+
+        // Set chat ID if it's a new chat
+        if (!currentChatId && response && typeof response === 'object' && 'query' in response) {
+          setCurrentChatId((response as any).query);
         }
 
-        if (response) {
+        if (response && typeof response === 'object' && 'response' in response) {
           const aiResponse: ChatMessage = {
             id: (Date.now() + 1).toString(),
-            content: response.response || "Maaf, saya tidak dapat memproses permintaan Anda saat ini.",
+            content: (response as any).response || "Maaf, saya tidak dapat memproses permintaan Anda saat ini.",
             sender: 'ai',
             timestamp: new Date()
           };
           setChatMessages(prev => [...prev, aiResponse]);
         } else {
-          // Fallback response if API fails
+          // Fallback response if API returns null
           const fallbackResponse: ChatMessage = {
             id: (Date.now() + 1).toString(),
-            content: "Maaf, terjadi kesalahan saat memproses permintaan Anda. Silakan coba lagi.",
+            content: getDemoResponse(messageForFallback),
             sender: 'ai',
             timestamp: new Date()
           };
@@ -183,10 +190,12 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
       }
     } catch (error) {
       console.error('Chat error:', error);
-      // Fallback response on error - use same logic as demo mode
-      const fallbackContent = isAuthenticated ? 
-        getDemoResponse(newMessage) : 
-        "Maaf, terjadi kesalahan koneksi. Silakan coba lagi nanti.";
+      
+      // Check if it's a timeout error or other error
+      const isTimeout = error instanceof Error && error.message.includes('timeout');
+      
+      // Always use fallback response for any error (including timeout)
+      const fallbackContent = getDemoResponse(messageForFallback);
       
       const errorResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -195,6 +204,11 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorResponse]);
+
+      // Log timeout specifically for debugging
+      if (isTimeout) {
+        console.warn('Chatbot API timeout after 3 seconds, using fallback response');
+      }
     } finally {
       setIsTyping(false);
       setNewMessage('');
@@ -440,7 +454,9 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
                           <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                           <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                         </div>
-                        <span className="text-xs text-slate-500 ml-2">AI sedang mengetik...</span>
+                        <span className="text-xs text-slate-500 ml-2">
+                          {isAuthenticated ? 'AI sedang mengetik... (timeout 3s)' : 'AI sedang mengetik...'}
+                        </span>
                       </div>
                     </div>
                   </div>
