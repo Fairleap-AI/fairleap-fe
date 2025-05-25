@@ -207,7 +207,7 @@ export const authAPI = {
 export const tripAPI = {
   // Create new trip
   createTrip: async (tripData: any): Promise<ApiResponse> => {
-    return apiCall(`${API_BASE_URL}/services/trip/new`, {
+    return apiCall(`${API_BASE_URL}/service/trip/new`, {
       method: 'POST',
       body: JSON.stringify(tripData),
     });
@@ -215,22 +215,30 @@ export const tripAPI = {
 
   // Get daily stats
   getDailyStats: async (): Promise<ApiResponse<TripStats[]>> => {
-    return apiCall(`${API_BASE_URL}/services/trip/stats/daily`, {
+    return apiCall(`${API_BASE_URL}/service/trip/daily`, {
       method: 'GET',
     });
   },
 
   // Get monthly stats
   getMonthlyStats: async (): Promise<ApiResponse<TripStats[]>> => {
-    return apiCall(`${API_BASE_URL}/services/trip/stats/monthly`, {
+    return apiCall(`${API_BASE_URL}/service/trip/monthly`, {
       method: 'GET',
     });
   },
 
   // Get yearly stats
   getYearlyStats: async (): Promise<ApiResponse<TripStats[]>> => {
-    return apiCall(`${API_BASE_URL}/services/trip/stats/yearly`, {
+    return apiCall(`${API_BASE_URL}/service/trip/yearly`, {
       method: 'GET',
+    });
+  },
+
+  // Predict earnings
+  predictEarnings: async (predictionData: any): Promise<ApiResponse> => {
+    return apiCall(`${API_BASE_URL}/service/predict/earnings`, {
+      method: 'POST',
+      body: JSON.stringify(predictionData),
     });
   },
 };
@@ -239,7 +247,7 @@ export const tripAPI = {
 export const wellnessAPI = {
   // Submit wellness assessment (mengirim score saja sesuai backend)
   submitWellness: async (score: number): Promise<ApiResponse> => {
-    return apiCall(`${API_BASE_URL}/services/wellness/new`, {
+    return apiCall(`${API_BASE_URL}/service/wellness/new`, {
       method: 'POST',
       body: JSON.stringify({ score }),
     });
@@ -247,21 +255,21 @@ export const wellnessAPI = {
 
   // Get wellness daily stats
   getDailyStats: async (): Promise<ApiResponse<WellnessData[]>> => {
-    return apiCall(`${API_BASE_URL}/services/wellness/stats/daily`, {
+    return apiCall(`${API_BASE_URL}/service/wellness/daily`, {
       method: 'GET',
     });
   },
 
   // Get wellness monthly stats
   getMonthlyStats: async (): Promise<ApiResponse<WellnessData[]>> => {
-    return apiCall(`${API_BASE_URL}/services/wellness/stats/monthly`, {
+    return apiCall(`${API_BASE_URL}/service/wellness/monthly`, {
       method: 'GET',
     });
   },
 
   // Get wellness yearly stats
   getYearlyStats: async (): Promise<ApiResponse<WellnessData[]>> => {
-    return apiCall(`${API_BASE_URL}/services/wellness/stats/yearly`, {
+    return apiCall(`${API_BASE_URL}/service/wellness/yearly`, {
       method: 'GET',
     });
   },
@@ -275,7 +283,7 @@ export const llmAPI = {
     pengeluaran: number,
     toleransi_risiko: string
   ): Promise<ApiResponse<FinancialAdvice>> => {
-    return apiCall(`${API_BASE_URL}/services/llm/fin_tips`, {
+    return apiCall(`${API_BASE_URL}/service/llm/financial`, {
       method: 'POST',
       body: JSON.stringify({
         pendapatan,
@@ -292,7 +300,7 @@ export const llmAPI = {
     sleep_quality: number,
     physical_condition: number
   ): Promise<ApiResponse<WellnessAdvice>> => {
-    return apiCall(`${API_BASE_URL}/services/llm/wellness`, {
+    return apiCall(`${API_BASE_URL}/service/llm/wellness`, {
       method: 'POST',
       body: JSON.stringify({
         energy_level,
@@ -309,7 +317,7 @@ export const llmAPI = {
     pengeluaran: number,
     toleransi_risiko: string
   ): Promise<ApiResponse<InvestmentAdvice>> => {
-    return apiCall(`${API_BASE_URL}/services/llm/invest`, {
+    return apiCall(`${API_BASE_URL}/service/llm/investment`, {
       method: 'POST',
       body: JSON.stringify({
         pendapatan,
@@ -324,7 +332,7 @@ export const llmAPI = {
 export const chatAPI = {
   // Create new chat
   createChat: async (message: string): Promise<ApiResponse<ChatResponse>> => {
-    return apiCall(`${API_BASE_URL}/services/chat/create`, {
+    return apiCall(`${API_BASE_URL}/service/chatbot/create`, {
       method: 'POST',
       body: JSON.stringify({ message }),
     });
@@ -332,21 +340,21 @@ export const chatAPI = {
 
   // Get list of all chats
   getChatList: async (): Promise<ApiResponse<ChatMessage[]>> => {
-    return apiCall(`${API_BASE_URL}/services/chat/list`, {
+    return apiCall(`${API_BASE_URL}/service/chatbot/list`, {
       method: 'GET',
     });
   },
 
   // Read specific chat
   readChat: async (chatId: string): Promise<ApiResponse<ChatMessage>> => {
-    return apiCall(`${API_BASE_URL}/services/chat/list/${chatId}`, {
+    return apiCall(`${API_BASE_URL}/service/chatbot/read/${chatId}`, {
       method: 'GET',
     });
   },
 
   // Reply to chat
   replyToChat: async (chatId: string, message: string): Promise<ApiResponse<ChatResponse>> => {
-    return apiCall(`${API_BASE_URL}/services/chat/reply`, {
+    return apiCall(`${API_BASE_URL}/service/chatbot/reply`, {
       method: 'PUT',
       body: JSON.stringify({
         chatId,
