@@ -183,10 +183,14 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
       }
     } catch (error) {
       console.error('Chat error:', error);
-      // Fallback response on error
+      // Fallback response on error - use same logic as demo mode
+      const fallbackContent = isAuthenticated ? 
+        getDemoResponse(newMessage) : 
+        "Maaf, terjadi kesalahan koneksi. Silakan coba lagi nanti.";
+      
       const errorResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        content: "Maaf, terjadi kesalahan koneksi. Silakan coba lagi nanti.",
+        content: fallbackContent,
         sender: 'ai',
         timestamp: new Date()
       };
@@ -200,7 +204,7 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
   const getDemoResponse = (message: string): string => {
     const lowerMessage = message.toLowerCase();
     
-    // Simple demo responses based on keywords
+    // Enhanced keyword-based responses with new categories
     if (lowerMessage.includes('penghasilan') || lowerMessage.includes('earnings') || lowerMessage.includes('income')) {
       return "🚗 Untuk optimasi penghasilan, gunakan fitur Earnings Calculator kami. Login untuk prediksi AI yang lebih akurat berdasarkan data driving Anda!";
     } else if (lowerMessage.includes('kesehatan') || lowerMessage.includes('wellness') || lowerMessage.includes('sehat')) {
@@ -211,8 +215,18 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
       return "📊 Anda bisa lihat analytics lengkap penghasilan, pola kerja, dan performa di menu Analytics. Data real-time tersedia setelah login!";
     } else if (lowerMessage.includes('login') || lowerMessage.includes('masuk') || lowerMessage.includes('daftar')) {
       return "🔐 Silakan login untuk mengakses fitur AI yang lebih canggih dan prediksi yang dipersonalisasi berdasarkan data driving Anda!";
+    } 
+    // New fallback responses for specific keywords
+    else if (lowerMessage.includes('insurance') || lowerMessage.includes('asuransi') || lowerMessage.includes('proteksi')) {
+      return "🛡️ **Asuransi & Proteksi Driver:**\n\n• **BPJS Ketenagakerjaan** - Wajib untuk driver profesional\n• **Asuransi Kendaraan** - Proteksi motor/mobil dari kecelakaan\n• **Asuransi Jiwa** - Perlindungan keluarga jika terjadi risiko\n• **Asuransi Kesehatan** - Coverage medical untuk driver aktif\n\n💡 *Tip: Alokasikan 5-10% penghasilan bulanan untuk asuransi. Login untuk konsultasi financial advisor yang lebih detail!*";
+    } else if (lowerMessage.includes('safety') || lowerMessage.includes('keselamatan') || lowerMessage.includes('keamanan')) {
+      return "🦺 **Tips Keselamatan Berkendara:**\n\n• **Helm/Sabuk Pengaman** - Selalu gunakan perlengkapan safety\n• **Istirahat Cukup** - Jangan mengemudi saat mengantuk\n• **Cek Kendaraan** - Periksa rem, ban, dan lampu secara rutin\n• **Hindari Cuaca Ekstrem** - Prioritaskan keselamatan daripada order\n• **Emergency Kit** - Bawa P3K dan tools darurat\n\n⚠️ *Keselamatan adalah prioritas utama. Tidak ada order yang lebih berharga dari nyawa Anda!*";
+    } else if (lowerMessage.includes('traffic') || lowerMessage.includes('lalu lintas') || lowerMessage.includes('macet') || lowerMessage.includes('rute')) {
+      return "🚦 **Tips Navigasi & Traffic Management:**\n\n• **Gunakan GPS Real-time** - Waze/Google Maps untuk rute optimal\n• **Hindari Rush Hour** - Jam 07:00-09:00 dan 17:00-19:00\n• **Kenali Shortcut** - Pelajari jalan alternatif di area operasi\n• **Monitor Event** - Hindari area konser/pertandingan besar\n• **Fuel Efficiency** - Rute pendek = BBM hemat = profit maksimal\n\n🎯 *Pro Tip: Area dengan traffic padat biasanya demand tinggi. Manfaatkan untuk surge pricing!*";
+    } else if (lowerMessage.includes('finance') || lowerMessage.includes('finansial') || lowerMessage.includes('keuangan') || lowerMessage.includes('budget')) {
+      return "💳 **Manajemen Keuangan Driver:**\n\n• **50/30/20 Rule** - 50% kebutuhan, 30% keinginan, 20% tabungan\n• **Emergency Fund** - Siapkan dana darurat 3-6 bulan pengeluaran\n• **Track Expenses** - Catat BBM, service, dan biaya operasional\n• **Diversifikasi Income** - Jangan bergantung satu platform saja\n• **Investasi Bertahap** - Mulai dari Rp50.000/bulan\n\n📈 *Target: Tingkatkan penghasilan 20% per tahun melalui optimasi rute dan waktu kerja. Login untuk financial planning yang lebih detail!*";
     } else {
-      return "👋 Halo! Saya FairLeap AI Assistant. Saat ini dalam mode demo. Login untuk mengakses AI yang lebih canggih dengan prediksi personal berdasarkan data driving Anda!";
+      return "👋 Halo! Saya FairLeap AI Assistant. Saat ini dalam mode demo. Login untuk mengakses AI yang lebih canggih dengan prediksi personal berdasarkan data driving Anda!\n\n💡 Saya bisa membantu dengan: penghasilan, kesehatan, investasi, analytics, asuransi, keselamatan, traffic, dan keuangan.";
     }
   };
 
@@ -465,6 +479,7 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
                       size="sm"
                       onClick={() => setNewMessage('Bagaimana cara meningkatkan penghasilan hari ini?')}
                       className="text-xs px-2 py-1 h-6"
+                      title="Penghasilan"
                     >
                       💰
                     </Button>
@@ -473,6 +488,7 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
                       size="sm"
                       onClick={() => setNewMessage('Lihat analytics penghasilan saya')}
                       className="text-xs px-2 py-1 h-6"
+                      title="Analytics"
                     >
                       📊
                     </Button>
@@ -481,8 +497,45 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
                       size="sm"
                       onClick={() => setNewMessage('Cek wellness score saya')}
                       className="text-xs px-2 py-1 h-6"
+                      title="Wellness"
                     >
                       ❤️
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewMessage('Tips asuransi untuk driver')}
+                      className="text-xs px-2 py-1 h-6"
+                      title="Asuransi"
+                    >
+                      🛡️
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewMessage('Tips keselamatan berkendara')}
+                      className="text-xs px-2 py-1 h-6"
+                      title="Safety"
+                    >
+                      🦺
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewMessage('Tips menghindari macet dan rute optimal')}
+                      className="text-xs px-2 py-1 h-6"
+                      title="Traffic"
+                    >
+                      🚦
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNewMessage('Manajemen keuangan untuk driver')}
+                      className="text-xs px-2 py-1 h-6"
+                      title="Finance"
+                    >
+                      💳
                     </Button>
                   </div>
                 </div>
