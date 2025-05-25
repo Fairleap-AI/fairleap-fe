@@ -83,6 +83,11 @@ export const useDataIntegration = () => {
           setTimeout(() => {
             if (isMounted.current) {
               checkUserDataAvailability();
+              // Load trip stats jika cache kosong
+              if (globalDataCache.tripStats.monthly.length === 0) {
+                console.log('🔄 Loading initial trip stats...');
+                loadTripStats('monthly', false);
+              }
             }
           }, 100);
         }
@@ -200,6 +205,7 @@ export const useDataIntegration = () => {
 
       if (response.status === 'success') {
         const newData = response.data;
+        console.log(`🔄 API Response for ${period}:`, newData);
         
         // Update global cache untuk shared state antar page
         globalDataCache.tripStats[period] = newData;
@@ -208,7 +214,7 @@ export const useDataIntegration = () => {
         // Update local state
         setTripStats(newData);
         
-        console.log(`🔄 Loaded fresh ${period} trip stats from API`);
+        console.log(`🔄 Loaded fresh ${period} trip stats from API, updated tripStats:`, newData);
       } else {
         throw new Error(response.message);
       }
@@ -234,22 +240,39 @@ export const useDataIntegration = () => {
       let wellnessLogs: WellnessLog[] = [];
       if (typeof window !== 'undefined') {
         const storedWellnessData = localStorage.getItem('fairleap_wellness_data');
-        wellnessLogs = storedWellnessData ? JSON.parse(storedWellnessData) : [];
+        if (storedWellnessData) {
+          try {
+            const parsedData = JSON.parse(storedWellnessData);
+            // Pastikan parsedData adalah array
+            wellnessLogs = Array.isArray(parsedData) ? parsedData : [];
+          } catch (parseError) {
+            console.error('Error parsing wellness data:', parseError);
+            wellnessLogs = [];
+          }
+        }
       }
       
-      // Filter berdasarkan period
+      // Filter berdasarkan period - dengan safe check
       const now = new Date();
       const filteredData = wellnessLogs.filter(log => {
-        const logDate = new Date(log.timestamp);
-        switch (period) {
-          case 'daily':
-            return logDate.toDateString() === now.toDateString();
-          case 'monthly':
-            return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
-          case 'yearly':
-            return logDate.getFullYear() === now.getFullYear();
-          default:
-            return true;
+        // Safe check untuk memastikan log memiliki timestamp
+        if (!log || !log.timestamp) return false;
+        
+        try {
+          const logDate = new Date(log.timestamp);
+          switch (period) {
+            case 'daily':
+              return logDate.toDateString() === now.toDateString();
+            case 'monthly':
+              return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
+            case 'yearly':
+              return logDate.getFullYear() === now.getFullYear();
+            default:
+              return true;
+          }
+        } catch (dateError) {
+          console.error('Error parsing log date:', dateError);
+          return false;
         }
       });
       
@@ -284,9 +307,18 @@ export const useDataIntegration = () => {
         timestamp: new Date().toISOString()
       };
 
-      // Load existing data dari localStorage
+      // Load existing data dari localStorage dengan safe parsing
+      let existingLogs: WellnessLog[] = [];
       const storedWellnessData = localStorage.getItem('fairleap_wellness_data');
-      const existingLogs: WellnessLog[] = storedWellnessData ? JSON.parse(storedWellnessData) : [];
+      if (storedWellnessData) {
+        try {
+          const parsedData = JSON.parse(storedWellnessData);
+          existingLogs = Array.isArray(parsedData) ? parsedData : [];
+        } catch (parseError) {
+          console.error('Error parsing existing wellness data:', parseError);
+          existingLogs = [];
+        }
+      }
       
       // Tambahkan log baru
       const updatedLogs = [...existingLogs, newWellnessLog];
@@ -297,6 +329,7 @@ export const useDataIntegration = () => {
       // Update state
       setWellnessData(updatedLogs);
       
+      console.log('✅ Wellness assessment saved successfully');
       return true;
     } catch (error) {
       handleError(error, 'submit wellness assessment');
@@ -340,7 +373,15 @@ export const useDataIntegration = () => {
       let hasWellnessData = false;
       if (typeof window !== 'undefined') {
         const storedWellnessData = localStorage.getItem('fairleap_wellness_data');
-        hasWellnessData = !!(storedWellnessData && JSON.parse(storedWellnessData).length > 0);
+        if (storedWellnessData) {
+          try {
+            const parsedData = JSON.parse(storedWellnessData);
+            hasWellnessData = Array.isArray(parsedData) && parsedData.length > 0;
+          } catch (parseError) {
+            console.error('Error parsing wellness data in availability check:', parseError);
+            hasWellnessData = false;
+          }
+        }
       }
 
       // Jika tidak ada data trip dan wellness, maka data kosong
@@ -411,22 +452,39 @@ export const useDataIntegration = () => {
 
   // Utility functions untuk transformasi data sesuai format backend
   const getWeeklyEarnings = useCallback(() => {
-    if (!tripStats.length) return [];
+    console.log('🔍 getWeeklyEarnings called, tripStats:', tripStats);
+    
+    if (!tripStats.length) {
+      console.log('❌ No tripStats data available');
+      return [];
+    }
     
     // Transform backend data for chart display
-    return tripStats.slice(-7).map(stat => {
+    const transformedData = tripStats.slice(-7).map((stat, index) => {
+      console.log(`📊 Transforming stat ${index}:`, stat);
+      
       // Handle different date formats from backend
       const dateKey = stat.date || stat.month || stat.year || new Date().toISOString();
-      const earnings = stat.total_earnings / 1000; // Convert to thousands
-      const trips = stat.total_trips;
       
-      return {
+      // Use total_earnings (which should be total_fare + total_tip) or calculate it
+      const totalEarnings = stat.total_earnings || (stat.total_fare + (stat.total_tip || 0));
+      const earnings = totalEarnings / 1000; // Convert to thousands
+      const trips = stat.total_trips;
+      const bonus = Math.round((stat.total_tip || 0) / 1000); // Use tips as bonus, with fallback
+      
+      const transformed = {
         day: new Date(dateKey).toLocaleDateString('id-ID', { weekday: 'short' }),
         earnings,
         trips,
-        bonus: Math.round(stat.total_tip / 1000) // Use tips as bonus
+        bonus
       };
+      
+      console.log(`✅ Transformed to:`, transformed);
+      return transformed;
     });
+    
+    console.log('📈 Final weeklyEarnings data:', transformedData);
+    return transformedData;
   }, [tripStats]);
 
   const getTotalStats = useCallback(() => {
@@ -440,11 +498,16 @@ export const useDataIntegration = () => {
       };
     }
 
-    const totals = tripStats.reduce((acc, stat) => ({
-      totalEarnings: acc.totalEarnings + stat.total_earnings,
-      totalTrips: acc.totalTrips + stat.total_trips,
-      totalDistance: acc.totalDistance + stat.total_distance,
-    }), { totalEarnings: 0, totalTrips: 0, totalDistance: 0 });
+    const totals = tripStats.reduce((acc, stat) => {
+      // Use total_earnings or calculate from total_fare + total_tip
+      const totalEarnings = stat.total_earnings || (stat.total_fare + (stat.total_tip || 0));
+      
+      return {
+        totalEarnings: acc.totalEarnings + totalEarnings,
+        totalTrips: acc.totalTrips + stat.total_trips,
+        totalDistance: acc.totalDistance + stat.total_distance,
+      };
+    }, { totalEarnings: 0, totalTrips: 0, totalDistance: 0 });
 
     return {
       ...totals,

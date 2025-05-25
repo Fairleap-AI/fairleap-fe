@@ -75,6 +75,7 @@ export default function DashboardPage() {
   // Use DataIntegration context - TANPA auto-sync
   const {
     tripStats,
+    weeklyEarnings,
     isLoading,
     error,
     isAuthenticated,
@@ -106,19 +107,30 @@ export default function DashboardPage() {
   // Calculate data from tripStats instead of globalTripStats
   const todayData = tripStats.length > 0 ? 
     tripStats[tripStats.length - 1] : 
-    { total_earnings: 0, total_trips: 0, total_distance: 0 };
+    { total_earnings: 0, total_fare: 0, total_tip: 0, total_trips: 0, total_distance: 0 };
 
-  const todayProgress = Math.min((todayData.total_earnings / 600000) * 100, 100); // Target Rp 600K
+  // Calculate actual earnings (fare + tip) if total_earnings not available
+  const todayEarnings = todayData.total_earnings || (todayData.total_fare + (todayData.total_tip || 0));
+  const todayProgress = Math.min((todayEarnings / 600000) * 100, 100); // Target Rp 600K
 
   // Calculate weekly totals from trip data
-  const weeklyTotals = tripStats.reduce((acc: any, day: any) => ({
-    earnings: acc.earnings + day.total_earnings,
-    trips: acc.trips + day.total_trips,
-    distance: acc.distance + day.total_distance
-  }), { earnings: 0, trips: 0, distance: 0 });
+  const weeklyTotals = tripStats.reduce((acc: any, day: any) => {
+    const dayEarnings = day.total_earnings || (day.total_fare + (day.total_tip || 0));
+    return {
+      earnings: acc.earnings + dayEarnings,
+      trips: acc.trips + day.total_trips,
+      distance: acc.distance + day.total_distance
+    };
+  }, { earnings: 0, trips: 0, distance: 0 });
 
   const averageTripValue = weeklyTotals.trips > 0 ? 
     Math.round(weeklyTotals.earnings / weeklyTotals.trips) : 0;
+
+  // Debug logging
+  console.log('🏠 Dashboard - tripStats:', tripStats);
+  console.log('📊 Dashboard - weeklyEarnings:', weeklyEarnings);
+  console.log('📈 Dashboard - todayData:', todayData);
+  console.log('📊 Dashboard - weeklyTotals:', weeklyTotals);
 
   // Get last update time from cache
   const getLastSyncTime = () => {
@@ -215,7 +227,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-emerald-100 text-sm">Penghasilan Hari Ini</p>
-                  <p className="text-3xl font-bold">{formatCurrency(todayData.total_earnings)}</p>
+                  <p className="text-3xl font-bold">{formatCurrency(todayEarnings)}</p>
                   <p className="text-emerald-100 text-xs">Target: Rp 600K</p>
                 </div>
                 <FiDollarSign className="h-8 w-8 text-emerald-200" />
@@ -294,9 +306,9 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {tripStats.length > 0 ? (
+              {weeklyEarnings.length > 0 ? (
                 <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={tripStats}>
+                  <LineChart data={weeklyEarnings}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="day" stroke="#64748b" />
                     <YAxis stroke="#64748b" />
@@ -337,6 +349,9 @@ export default function DashboardPage() {
                       <p>No earnings data available</p>
                       {!isAuthenticated && (
                         <p className="text-sm mt-1">Login to see your real data</p>
+                      )}
+                      {isAuthenticated && tripStats.length === 0 && (
+                        <p className="text-sm mt-1">No trip data found. Start driving to see your earnings!</p>
                       )}
                     </div>
                   )}
