@@ -20,8 +20,9 @@ import {
 } from "@/components/ui/form";
 import { FcGoogle } from "react-icons/fc";
 import { IoEyeOutline, IoEyeOffOutline, IoArrowBack } from "react-icons/io5";
-import { apiClient } from "@/lib/api";
+import { authAPI } from "@/lib/apiService";
 import { useToast } from "@/components/ui/toast";
+import { useDataSync } from "@/context/DataSyncContext";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -37,6 +38,7 @@ function SignInContent() {
   const { addToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { syncAllData, loadUserProfile } = useDataSync();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -62,10 +64,19 @@ function SignInContent() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      const response = await apiClient.login(data.email, data.password);
+      const response = await authAPI.login(data.email, data.password);
 
       if (response.status === "success") {
         localStorage.setItem("authToken", response.data.token);
+
+        try {
+          await Promise.all([
+            syncAllData(),
+            loadUserProfile()
+          ]);
+        } catch (syncError) {
+          console.warn('Data sync failed after login, will retry later:', syncError);
+        }
 
         addToast({
           type: "success",
@@ -100,7 +111,7 @@ function SignInContent() {
   };
   
   const handleGoogleLogin = () => {
-    const googleOAuthUrl = apiClient.getGoogleOAuthUrl();
+    const googleOAuthUrl = authAPI.getGoogleOAuthUrl();
     window.location.href = googleOAuthUrl;
   };
 

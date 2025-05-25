@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { useDataSync } from "@/context/DataSyncContext";
+import { SyncIndicator } from "@/components/ui/SyncIndicator";
 import {
   FiHeart,
   FiActivity,
@@ -16,7 +20,9 @@ import {
   FiAlertTriangle,
   FiCheckCircle,
   FiRefreshCw,
-  FiTrendingUp
+  FiTrendingUp,
+  FiWifi,
+  FiWifiOff
 } from "react-icons/fi";
 import {
   PieChart,
@@ -69,22 +75,41 @@ export default function WellnessCheckPage() {
   const [existingData, setExistingData] = useState<WellnessData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Load existing wellness data on mount
+  // Use DataSync context untuk sinkronisasi global
+  const {
+    globalWellnessData,
+    globalWellnessAdvice,
+    isGlobalLoading,
+    globalError,
+    isGlobalAuthenticated,
+    lastSyncTime,
+    refreshData,
+    submitWellnessAssessment,
+    broadcastUpdate,
+    clearGlobalError
+  } = useDataSync();
+
+  // Load wellness data saat component mount
   useEffect(() => {
-    const data = loadWellnessData();
-    if (data && data.isCompleted) {
-      setExistingData(data);
+    // Load local data first for immediate display
+    const localData = loadWellnessData();
+    if (localData && localData.isCompleted) {
+      setExistingData(localData);
       setIsCompleted(true);
-      setWellnessScore(data.overallScore);
+      setWellnessScore(localData.overallScore);
       
-      // Convert answers back to string format for display
       const answersMap: Record<string, string> = {};
-      Object.keys(data.answers).forEach(questionId => {
-        answersMap[questionId] = data.answers[questionId].value;
+      Object.keys(localData.answers).forEach(questionId => {
+        answersMap[questionId] = localData.answers[questionId].value;
       });
       setAnswers(answersMap);
     }
-  }, []);
+
+    // Load backend data jika authenticated
+    if (isGlobalAuthenticated) {
+      refreshData('wellness');
+    }
+  }, [isGlobalAuthenticated, refreshData]);
 
   const handleAnswer = (questionId: string, value: string) => {
     setAnswers(prev => ({ ...prev, [questionId]: value }));
@@ -116,20 +141,41 @@ export default function WellnessCheckPage() {
       const overallScore = calculateWellnessScore(wellnessAnswers);
       
       // Create wellness data object
-      const wellnessData: WellnessData = {
+      const wellnessDataLocal: WellnessData = {
         answers: wellnessAnswers,
         overallScore,
         lastAssessment: new Date(),
         isCompleted: true
       };
 
-      // Save to localStorage
-      saveWellnessData(wellnessData);
+      // Save to localStorage untuk backup
+      saveWellnessData(wellnessDataLocal);
+
+      // Submit ke backend jika authenticated
+      let success = false;
+      if (isGlobalAuthenticated) {
+        const assessmentData = {
+          energy_level: wellnessAnswers['energy']?.score || 0,
+          stress_level: wellnessAnswers['stress']?.score || 0,
+          sleep_quality: wellnessAnswers['sleep']?.score || 0,
+          physical_condition: wellnessAnswers['physical']?.score || 0
+        };
+        
+        success = await submitWellnessAssessment(assessmentData);
+      }
+
+      // Broadcast update ke context untuk sinkronisasi antar page
+      if (isGlobalAuthenticated && success) {
+        broadcastUpdate('wellness_data', wellnessDataLocal);
+        if (globalWellnessAdvice) {
+          broadcastUpdate('wellness_advice', globalWellnessAdvice);
+        }
+      }
 
       // Update state
       setWellnessScore(overallScore);
       setIsCompleted(true);
-      setExistingData(wellnessData);
+      setExistingData(wellnessDataLocal);
 
     } catch (error) {
       console.error('Error saving wellness data:', error);
@@ -170,11 +216,62 @@ export default function WellnessCheckPage() {
         "Monitor kesehatan harian untuk performa optimal"
       }
       badge={{
-        icon: FiShield,
-        text: isCompleted ? `Score: ${wellnessScore}%` : "Assessment"
+        icon: isGlobalAuthenticated ? FiWifi : FiWifiOff,
+        text: isCompleted ? `Score: ${wellnessScore}%` : (isGlobalAuthenticated ? "Connected" : "Offline Mode")
       }}
     >
       <div className="p-6">
+        {/* Global Sync Indicator */}
+        <SyncIndicator pageType="wellness" showDetails={false} />
+
+        {/* Connection Status Alert */}
+        {!isGlobalAuthenticated && (
+          <Alert className="bg-amber-50 border-amber-200 mb-6">
+            <FiWifiOff className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Offline Mode:</strong> Data wellness disimpan lokal. Login untuk sinkronisasi dengan backend dan AI recommendations.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Alert */}
+        {globalError && (
+          <Alert className="bg-red-50 border-red-200 mb-6">
+            <FiAlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800 flex items-center justify-between">
+              <span><strong>Error:</strong> {globalError}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearGlobalError}
+                className="ml-2"
+              >
+                Dismiss
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Loading indicator untuk backend operations */}
+        {(isGlobalLoading || isSubmitting) && (
+          <Alert className="bg-blue-50 border-blue-200 mb-6">
+            <FiRefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
+            <AlertDescription className="text-blue-800">
+              <strong>Loading:</strong> {isSubmitting ? 'Submitting wellness assessment...' : 'Loading wellness data...'}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* AI Recommendations dari backend menggunakan global state */}
+        {isGlobalAuthenticated && globalWellnessAdvice && (
+          <Alert className="bg-green-50 border-green-200 mb-6">
+            <FiHeart className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              <strong>AI Recommendation:</strong> {globalWellnessAdvice.rest_advice}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Show existing assessment results */}
         {isCompleted && existingData ? (
           <div className="max-w-6xl mx-auto space-y-8">

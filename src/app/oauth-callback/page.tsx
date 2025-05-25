@@ -3,12 +3,16 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useToast } from "@/components/ui/toast";
+import { useDataSync } from "@/context/DataSyncContext";
 
 function OAuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { addToast } = useToast();
   const [isProcessing, setIsProcessing] = useState(true);
+  
+  // Use DataSync untuk immediate sync setelah login
+  const { syncAllData, loadUserProfile } = useDataSync();
 
   useEffect(() => {
     const processCallback = async () => {
@@ -17,6 +21,16 @@ function OAuthCallbackContent() {
 
         if (token) {
           localStorage.setItem("authToken", token);
+
+          // Trigger immediate data sync setelah token tersimpan
+          try {
+            await Promise.all([
+              syncAllData(),
+              loadUserProfile()
+            ]);
+          } catch (syncError) {
+            console.warn('Data sync failed after login, will retry later:', syncError);
+          }
 
           addToast({
             type: "success",
@@ -55,7 +69,7 @@ function OAuthCallbackContent() {
     };
 
     processCallback();
-  }, [searchParams, router, addToast]);
+  }, [searchParams, router, addToast, syncAllData, loadUserProfile]);
 
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-white">

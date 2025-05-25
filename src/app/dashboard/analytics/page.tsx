@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useDataSync } from "@/context/DataSyncContext";
+import { SyncIndicator } from "@/components/ui/SyncIndicator";
 import {
   hasCompletedWellnessToday,
-  getWellnessMetrics,
   getOverallWellnessScore,
   getWellnessStatus,
   getWellnessRecommendations
@@ -34,7 +36,9 @@ import {
   FiHeart,
   FiShield,
   FiBattery,
-  FiAlertTriangle
+  FiAlertTriangle,
+  FiWifi,
+  FiWifiOff
 } from "react-icons/fi";
 import {
   LineChart,
@@ -56,45 +60,45 @@ import {
   RadialBar
 } from "recharts";
 
-// Performance data over time
+// Performance data over time (mock data dengan format sesuai backend)
 const monthlyPerformance = [
-  { month: "Jan", earnings: 8500000, trips: 165, hours: 180, rating: 4.6, fuel: 1200000, wellness: 72 },
-  { month: "Feb", earnings: 9200000, trips: 180, hours: 195, rating: 4.7, fuel: 1350000, wellness: 75 },
-  { month: "Mar", earnings: 8800000, trips: 170, hours: 185, rating: 4.5, fuel: 1280000, wellness: 69 },
-  { month: "Apr", earnings: 9500000, trips: 190, hours: 200, rating: 4.8, fuel: 1400000, wellness: 78 },
-  { month: "Mei", earnings: 10200000, trips: 205, hours: 210, rating: 4.9, fuel: 1500000, wellness: 81 },
-  { month: "Jun", earnings: 11100000, trips: 220, hours: 225, rating: 4.8, fuel: 1650000, wellness: 79 }
+  { month: "Jan", total_earnings: 8500000, total_trips: 165, total_distance: 5400, total_fare: 7650000, total_tip: 850000, rating: 4.6, wellness: 72 },
+  { month: "Feb", total_earnings: 9200000, total_trips: 180, total_distance: 5850, total_fare: 8280000, total_tip: 920000, rating: 4.7, wellness: 75 },
+  { month: "Mar", total_earnings: 8800000, total_trips: 170, total_distance: 5550, total_fare: 7920000, total_tip: 880000, rating: 4.5, wellness: 69 },
+  { month: "Apr", total_earnings: 9500000, total_trips: 190, total_distance: 6175, total_fare: 8550000, total_tip: 950000, rating: 4.8, wellness: 78 },
+  { month: "Mei", total_earnings: 10200000, total_trips: 205, total_distance: 6560, total_fare: 9180000, total_tip: 1020000, rating: 4.9, wellness: 81 },
+  { month: "Jun", total_earnings: 11100000, total_trips: 220, total_distance: 7040, total_fare: 9990000, total_tip: 1110000, rating: 4.8, wellness: 79 }
 ];
 
 // Daily earnings pattern
 const dailyEarnings = [
-  { day: "Senin", earnings: 320000, trips: 12, avg_per_trip: 26667, wellness: 75 },
-  { day: "Selasa", earnings: 295000, trips: 11, avg_per_trip: 26818, wellness: 72 },
-  { day: "Rabu", earnings: 285000, trips: 10, avg_per_trip: 28500, wellness: 70 },
-  { day: "Kamis", earnings: 310000, trips: 12, avg_per_trip: 25833, wellness: 73 },
-  { day: "Jumat", earnings: 350000, trips: 14, avg_per_trip: 25000, wellness: 78 },
-  { day: "Sabtu", earnings: 420000, trips: 16, avg_per_trip: 26250, wellness: 82 },
-  { day: "Minggu", earnings: 380000, trips: 15, avg_per_trip: 25333, wellness: 80 }
+  { day: "Senin", total_earnings: 320000, total_trips: 12, total_distance: 385, total_fare: 288000, total_tip: 32000, wellness: 75 },
+  { day: "Selasa", total_earnings: 295000, total_trips: 11, total_distance: 355, total_fare: 265500, total_tip: 29500, wellness: 72 },
+  { day: "Rabu", total_earnings: 285000, total_trips: 10, total_distance: 340, total_fare: 256500, total_tip: 28500, wellness: 70 },
+  { day: "Kamis", total_earnings: 310000, total_trips: 12, total_distance: 375, total_fare: 279000, total_tip: 31000, wellness: 73 },
+  { day: "Jumat", total_earnings: 350000, total_trips: 14, total_distance: 425, total_fare: 315000, total_tip: 35000, wellness: 78 },
+  { day: "Sabtu", total_earnings: 420000, total_trips: 16, total_distance: 510, total_fare: 378000, total_tip: 42000, wellness: 82 },
+  { day: "Minggu", total_earnings: 380000, total_trips: 15, total_distance: 465, total_fare: 342000, total_tip: 38000, wellness: 80 }
 ];
 
 // Hourly performance
 const hourlyData = [
-  { hour: "06", earnings: 45000, trips: 2, demand: 30, fatigue: 15 },
-  { hour: "07", earnings: 85000, trips: 3, demand: 65, fatigue: 25 },
-  { hour: "08", earnings: 120000, trips: 4, demand: 85, fatigue: 35 },
-  { hour: "09", earnings: 95000, trips: 3, demand: 60, fatigue: 40 },
-  { hour: "10", earnings: 75000, trips: 3, demand: 45, fatigue: 45 },
-  { hour: "11", earnings: 85000, trips: 3, demand: 50, fatigue: 50 },
-  { hour: "12", earnings: 110000, trips: 4, demand: 70, fatigue: 55 },
-  { hour: "13", earnings: 95000, trips: 3, demand: 65, fatigue: 60 },
-  { hour: "14", earnings: 80000, trips: 3, demand: 55, fatigue: 65 },
-  { hour: "15", earnings: 75000, trips: 3, demand: 50, fatigue: 70 },
-  { hour: "16", earnings: 95000, trips: 3, demand: 65, fatigue: 75 },
-  { hour: "17", earnings: 140000, trips: 5, demand: 90, fatigue: 80 },
-  { hour: "18", earnings: 155000, trips: 5, demand: 95, fatigue: 85 },
-  { hour: "19", earnings: 125000, trips: 4, demand: 80, fatigue: 80 },
-  { hour: "20", earnings: 95000, trips: 3, demand: 60, fatigue: 75 },
-  { hour: "21", earnings: 75000, trips: 3, demand: 45, fatigue: 70 }
+  { hour: "06", total_earnings: 45000, total_trips: 2, demand: 30, fatigue: 15 },
+  { hour: "07", total_earnings: 85000, total_trips: 3, demand: 65, fatigue: 25 },
+  { hour: "08", total_earnings: 120000, total_trips: 4, demand: 85, fatigue: 35 },
+  { hour: "09", total_earnings: 95000, total_trips: 3, demand: 60, fatigue: 40 },
+  { hour: "10", total_earnings: 75000, total_trips: 3, demand: 45, fatigue: 45 },
+  { hour: "11", total_earnings: 85000, total_trips: 3, demand: 50, fatigue: 50 },
+  { hour: "12", total_earnings: 110000, total_trips: 4, demand: 70, fatigue: 55 },
+  { hour: "13", total_earnings: 95000, total_trips: 3, demand: 65, fatigue: 60 },
+  { hour: "14", total_earnings: 80000, total_trips: 3, demand: 55, fatigue: 65 },
+  { hour: "15", total_earnings: 75000, total_trips: 3, demand: 50, fatigue: 70 },
+  { hour: "16", total_earnings: 95000, total_trips: 3, demand: 65, fatigue: 75 },
+  { hour: "17", total_earnings: 140000, total_trips: 5, demand: 90, fatigue: 80 },
+  { hour: "18", total_earnings: 155000, total_trips: 5, demand: 95, fatigue: 85 },
+  { hour: "19", total_earnings: 125000, total_trips: 4, demand: 80, fatigue: 80 },
+  { hour: "20", total_earnings: 95000, total_trips: 3, demand: 60, fatigue: 75 },
+  { hour: "21", total_earnings: 75000, total_trips: 3, demand: 45, fatigue: 70 }
 ];
 
 // Wellness metrics trend
@@ -133,11 +137,21 @@ const savingsData = [
 ];
 
 export default function AnalyticsPage() {
-  const [timeRange, setTimeRange] = useState("6m");
-  const [selectedMetric, setSelectedMetric] = useState("earnings");
+  const [timeFilter, setTimeFilter] = useState("1m");
   const [hasWellnessData, setHasWellnessData] = useState(false);
   const [wellnessScore, setWellnessScore] = useState(0);
   const [realWellnessMetrics, setRealWellnessMetrics] = useState<any[]>([]);
+
+  // Use DataSync context untuk sinkronisasi global  
+  const {
+    globalTripStats,
+    isGlobalLoading,
+    globalError,
+    isGlobalAuthenticated,
+    lastSyncTime,
+    refreshData,
+    clearGlobalError
+  } = useDataSync();
 
   useEffect(() => {
     // Load wellness data
@@ -145,71 +159,136 @@ export default function AnalyticsPage() {
     setHasWellnessData(hasWellness);
     
     if (hasWellness) {
-      const score = getOverallWellnessScore();
-      const metrics = getWellnessMetrics();
-      
+      const score = getOverallWellnessScore();      
       setWellnessScore(score);
-      setRealWellnessMetrics(metrics);
+      // Use wellnessMetrics from static data sebagai fallback
+      setRealWellnessMetrics(wellnessMetrics);
     }
   }, []);
 
-  // Calculate key metrics
-  const totalEarnings = monthlyPerformance.reduce((sum, month) => sum + month.earnings, 0);
-  const totalTrips = monthlyPerformance.reduce((sum, month) => sum + month.trips, 0);
-  const avgRating = monthlyPerformance.reduce((sum, month) => sum + month.rating, 0) / monthlyPerformance.length;
-  const totalHours = monthlyPerformance.reduce((sum, month) => sum + month.hours, 0);
+  // Load analytics data saat component mount
+  useEffect(() => {
+    if (isGlobalAuthenticated) {
+      refreshData('analytics');
+    }
+  }, [isGlobalAuthenticated, refreshData]);
+
+  // Handle time filter change
+  const handleTimeFilterChange = (filter: string) => {
+    setTimeFilter(filter);
+    // Refresh data dengan periode baru jika diperlukan
+    if (isGlobalAuthenticated) {
+      refreshData('analytics');
+    }
+  };
+
+  // Transform backend data or use mock data as fallback
+  const getDisplayData = () => {
+    if (isGlobalAuthenticated && globalTripStats.length > 0) {
+      return globalTripStats;
+    }
+    
+    // Fallback ke mock data
+    const period = timeFilter === "1m" ? "daily" : timeFilter === "1y" ? "yearly" : "monthly";
+    return period === "daily" ? dailyEarnings : monthlyPerformance;
+  };
+
+  const displayData = getDisplayData();
+  const isRealData = isGlobalAuthenticated && globalTripStats.length > 0;
+
+  // Calculate key metrics from display data
+  const totalEarnings = displayData.reduce((sum, month) => sum + month.total_earnings, 0);
+  const totalTrips = displayData.reduce((sum, month) => sum + month.total_trips, 0);
+  const avgRating = displayData.reduce((sum, month) => sum + (month.rating || 4.5), 0) / displayData.length;
+  const totalDistance = displayData.reduce((sum, month) => sum + (month.total_distance || 0), 0);
   
   // Use real wellness score if available, otherwise use mock data for non-wellness calculations
   const avgWellness = hasWellnessData ? wellnessScore : 0;
 
-  const currentMonth = monthlyPerformance[monthlyPerformance.length - 1];
-  const previousMonth = monthlyPerformance[monthlyPerformance.length - 2];
+  const currentMonth = displayData[displayData.length - 1];
+  const previousMonth = displayData[displayData.length - 2];
   
-  const earningsGrowth = ((currentMonth.earnings - previousMonth.earnings) / previousMonth.earnings) * 100;
-  const tripsGrowth = ((currentMonth.trips - previousMonth.trips) / previousMonth.trips) * 100;
+  const earningsGrowth = previousMonth ? ((currentMonth.total_earnings - previousMonth.total_earnings) / previousMonth.total_earnings) * 100 : 0;
+  const tripsGrowth = previousMonth ? ((currentMonth.total_trips - previousMonth.total_trips) / previousMonth.total_trips) * 100 : 0;
   const wellnessGrowth = hasWellnessData ? 5.2 : 0; // Mock growth since we don't have historical data yet
 
   const wellnessStatus = hasWellnessData ? getWellnessStatus(wellnessScore) : null;
 
   return (
     <DashboardLayout
-      title="Analytics Dashboard"
-      subtitle="Performance Insights & Data Analysis"
+      title="Analytics"
+      subtitle="Analisis mendalam performa dan tren penghasilan"
       badge={{
-        icon: FiActivity,
-        text: "Live Data"
+        icon: isGlobalAuthenticated ? FiWifi : FiWifiOff,
+        text: lastSyncTime ? 
+          `Last sync: ${lastSyncTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}` : 
+          "No sync"
       }}
     >
       <div className="p-6">
-        {/* Time Range Filter */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex space-x-2">
-            {["1m", "3m", "6m", "1y"].map((range) => (
+        {/* Global Sync Indicator */}
+        <SyncIndicator pageType="analytics" showDetails={false} />
+
+        {/* Time Filter Controls */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-slate-800">Performance Analytics</h1>
+          <div className="flex items-center space-x-2">
+            {['1m', '3m', '6m', '1y'].map((filter) => (
               <Button
-                key={range}
-                variant={timeRange === range ? "default" : "outline"}
+                key={filter}
+                variant={timeFilter === filter ? "default" : "outline"}
                 size="sm"
-                onClick={() => setTimeRange(range)}
+                onClick={() => handleTimeFilterChange(filter)}
               >
-                {range === "1m" ? "1 Bulan" : range === "3m" ? "3 Bulan" : range === "6m" ? "6 Bulan" : "1 Tahun"}
+                {filter}
               </Button>
             ))}
-          </div>
-          
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm">
-              <FiFilter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
-            <Button variant="outline" size="sm">
-              <FiDownload className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button variant="outline" size="sm">
-              <FiRefreshCw className="h-4 w-4" />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refreshData('analytics')}
+              disabled={isGlobalLoading}
+            >
+              <FiRefreshCw className={`h-4 w-4 ${isGlobalLoading ? 'animate-spin' : ''}`} />
             </Button>
           </div>
         </div>
+
+        {/* Connection Status and Loading Alerts */}
+        {!isGlobalAuthenticated && (
+          <Alert className="bg-amber-50 border-amber-200 mb-6">
+            <FiWifiOff className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Offline Mode:</strong> Menampilkan data mock untuk demo. Login untuk melihat data real-time dari backend.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {globalError && (
+          <Alert className="bg-red-50 border-red-200 mb-6">
+            <FiAlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800 flex items-center justify-between">
+              <span><strong>Error:</strong> {globalError}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearGlobalError}
+                className="ml-2"
+              >
+                Dismiss
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isGlobalLoading && (
+          <Alert className="bg-blue-50 border-blue-200 mb-6">
+            <FiRefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
+            <AlertDescription className="text-blue-800">
+              <strong>Loading:</strong> Mengambil data terbaru dari server...
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Key Performance Indicators */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -303,15 +382,15 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={350}>
-                  <LineChart data={monthlyPerformance}>
+                  <LineChart data={displayData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                     <XAxis dataKey="month" stroke="#64748b" />
                     <YAxis yAxisId="earnings" orientation="left" stroke="#64748b" tickFormatter={(value) => `${value / 1000000} Juta`} />
                     <YAxis yAxisId="wellness" orientation="right" stroke="#64748b" />
                     <Tooltip 
                       formatter={(value: any, name: string) => {
-                        if (name === 'earnings') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
-                        if (name === 'trips') return [value, 'Trips'];
+                        if (name === 'Pendapatan') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
+                        if (name === 'total_trips') return [value, 'Trips'];
                         if (name === 'wellness') return [`${value}%`, 'Wellness Score'];
                         return [value, name];
                       }}
@@ -320,7 +399,7 @@ export default function AnalyticsPage() {
                     <Line 
                       yAxisId="earnings"
                       type="monotone" 
-                      dataKey="earnings" 
+                      dataKey="total_earnings" 
                       stroke="#10b981" 
                       strokeWidth={3}
                       name="Pendapatan"
@@ -366,12 +445,12 @@ export default function AnalyticsPage() {
                     <YAxis yAxisId="wellness" orientation="right" stroke="#64748b" />
                     <Tooltip 
                       formatter={(value: any, name: string) => {
-                        if (name === 'earnings') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
-                        if (name === 'wellness') return [`${value}%`, 'Wellness'];
+                        if (name === 'Pendapatan') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
+                        if (name === 'Wellness') return [`${value}%`, 'Wellness'];
                         return [value, name];
                       }}
                     />
-                    <Bar yAxisId="earnings" dataKey="earnings" fill="#10b981" name="Pendapatan" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="earnings" dataKey="total_earnings" fill="#10b981" name="Pendapatan" radius={[4, 4, 0, 0]} />
                     <Bar yAxisId="wellness" dataKey="wellness" fill="#8b5cf6" name="Wellness" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -394,14 +473,14 @@ export default function AnalyticsPage() {
                     <YAxis stroke="#64748b" />
                     <Tooltip 
                       formatter={(value: any, name: string) => {
-                        if (name === 'earnings') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
-                        if (name === 'fatigue') return [`${value}%`, 'Fatigue Level'];
+                        if (name === 'Pendapatan') return [`Rp ${value.toLocaleString('id-ID')}`, 'Pendapatan'];
+                        if (name === 'Fatigue Level') return [`${value}%`, 'Fatigue Level'];
                         return [value, name];
                       }}
                     />
                     <Area 
                       type="monotone" 
-                      dataKey="earnings" 
+                      dataKey="total_earnings" 
                       stroke="#10b981" 
                       fill="#10b981" 
                       fillOpacity={0.3}

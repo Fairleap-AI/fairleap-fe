@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDataSync } from "@/context/DataSyncContext";
 import {
   FiShield,
   FiTarget,
@@ -19,7 +23,11 @@ import {
   FiTruck,
   FiBook,
   FiActivity,
-  FiInfo
+  FiInfo,
+  FiRefreshCw,
+  FiWifi,
+  FiWifiOff,
+  FiAlertTriangle
 } from "react-icons/fi";
 import {
   LineChart,
@@ -95,15 +103,76 @@ const investmentOptions = [
 ];
 
 export default function FinancialAdvisorPage() {
+  const [pendapatan, setPendapatan] = useState('10200000');
+  const [pengeluaran, setPengeluaran] = useState('7200000');
+  const [toleransiRisiko, setToleransiRisiko] = useState('sedang');
   const [emergencyFund, setEmergencyFund] = useState(6);
-  const [riskTolerance, setRiskTolerance] = useState(3);
+  const [isSubmittingAdvice, setIsSubmittingAdvice] = useState(false);
 
-  // Calculate financial health score
-  const monthlyIncome = 10200000;
-  const monthlyExpenses = 7200000;
-  const savings = 25000000;
-  const emergencyFundTarget = emergencyFund * monthlyExpenses;
-  const savingsRate = ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100;
+  // Use DataSync context untuk sinkronisasi global
+  const {
+    globalFinancialAdvice,
+    globalInvestmentAdvice,
+    globalTripStats,
+    isGlobalLoading,
+    globalError,
+    isGlobalAuthenticated,
+    lastSyncTime,
+    refreshData,
+    getFinancialAdvice,
+    getInvestmentAdvice,
+    clearGlobalError
+  } = useDataSync();
+
+  // Load financial data dan advice saat component mount
+  useEffect(() => {
+    if (isGlobalAuthenticated) {
+      refreshData('financial');
+    }
+  }, [isGlobalAuthenticated, refreshData]);
+
+  // Auto-refresh financial advice saat input berubah
+  useEffect(() => {
+    if (isGlobalAuthenticated && pendapatan && pengeluaran && toleransiRisiko) {
+      const pendapatanNum = parseInt(pendapatan.replace(/\D/g, '')) || 0;
+      const pengeluaranNum = parseInt(pengeluaran.replace(/\D/g, '')) || 0;
+      
+      if (pendapatanNum > 0 && pengeluaranNum > 0) {
+        getFinancialAdvice(pendapatanNum, pengeluaranNum, toleransiRisiko);
+        getInvestmentAdvice(pendapatanNum, pengeluaranNum, toleransiRisiko);
+      }
+    }
+  }, [isGlobalAuthenticated, pendapatan, pengeluaran, toleransiRisiko, getFinancialAdvice, getInvestmentAdvice]);
+
+  // Manual refresh financial advice
+  const handleRefreshAdvice = async () => {
+    setIsSubmittingAdvice(true);
+    try {
+      const pendapatanNum = parseInt(pendapatan.replace(/\D/g, '')) || 0;
+      const pengeluaranNum = parseInt(pengeluaran.replace(/\D/g, '')) || 0;
+      
+      if (pendapatanNum > 0 && pengeluaranNum > 0) {
+        await getFinancialAdvice(pendapatanNum, pengeluaranNum, toleransiRisiko);
+        await getInvestmentAdvice(pendapatanNum, pengeluaranNum, toleransiRisiko);
+      }
+    } finally {
+      setIsSubmittingAdvice(false);
+    }
+  };
+
+  // Calculate financial health menggunakan globalTripStats
+  const monthlyIncome = parseInt(pendapatan.replace(/\D/g, '')) || 10200000;
+  const monthlyExpenses = parseInt(pengeluaran.replace(/\D/g, '')) || 7200000;
+  
+  // Gunakan data dari backend jika ada
+  const actualIncome = globalTripStats.length > 0 ? 
+    globalTripStats.reduce((sum, stat) => sum + stat.total_earnings, 0) / globalTripStats.length : 
+    monthlyIncome;
+  const actualExpenses = monthlyExpenses;
+  
+  const savings = 25000000; // TODO: Ambil dari backend jika ada endpoint
+  const emergencyFundTarget = emergencyFund * actualExpenses;
+  const savingsRate = ((actualIncome - actualExpenses) / actualIncome) * 100;
   
   const financialHealthScore = Math.min(100, 
     (savingsRate * 0.4) + 
@@ -115,11 +184,129 @@ export default function FinancialAdvisorPage() {
     <DashboardLayout
       title="Financial Advisor"
       badge={{
-        icon: FiActivity,
+        icon: isGlobalAuthenticated ? FiWifi : FiWifiOff,
         text: `Financial Health: ${Math.round(financialHealthScore)}%`
       }}
     >
       <div className="p-6">
+        {/* Connection Status Alert */}
+        {!isGlobalAuthenticated && (
+          <Alert className="bg-amber-50 border-amber-200 mb-6">
+            <FiWifiOff className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Offline Mode:</strong> Login untuk mendapatkan rekomendasi finansial AI yang personal.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Alert */}
+        {globalError && (
+          <Alert className="bg-red-50 border-red-200 mb-6">
+            <FiAlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800 flex items-center justify-between">
+              <span><strong>Error:</strong> {globalError}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearGlobalError}
+                className="ml-2"
+              >
+                Dismiss
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Loading indicator */}
+        {(isGlobalLoading || isSubmittingAdvice) && (
+          <Alert className="bg-blue-50 border-blue-200 mb-6">
+            <FiRefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
+            <AlertDescription className="text-blue-800">
+              <strong>Loading:</strong> {isSubmittingAdvice ? 'Getting AI financial advice...' : 'Loading financial data...'}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Financial Input Form */}
+        {isGlobalAuthenticated && (
+          <Card className="shadow-lg border-0 bg-white/70 backdrop-blur-sm mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <FiDollarSign className="h-5 w-5 text-emerald-600" />
+                  <span>Data Finansial</span>
+                </div>
+                <Button 
+                  onClick={handleRefreshAdvice}
+                  disabled={isSubmittingAdvice}
+                  variant="outline"
+                  size="sm"
+                >
+                  <FiRefreshCw className={`h-4 w-4 mr-2 ${isSubmittingAdvice ? 'animate-spin' : ''}`} />
+                  Update AI Advice
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <Label htmlFor="pendapatan">Pendapatan Bulanan</Label>
+                  <Input
+                    id="pendapatan"
+                    value={pendapatan}
+                    onChange={(e) => setPendapatan(e.target.value.replace(/\D/g, ''))}
+                    placeholder="10200000"
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Rp {parseInt(pendapatan.replace(/\D/g, '') || '0').toLocaleString('id-ID')}
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="pengeluaran">Pengeluaran Bulanan</Label>
+                  <Input
+                    id="pengeluaran"
+                    value={pengeluaran}
+                    onChange={(e) => setPengeluaran(e.target.value.replace(/\D/g, ''))}
+                    placeholder="7200000"
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">
+                    Rp {parseInt(pengeluaran.replace(/\D/g, '') || '0').toLocaleString('id-ID')}
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="toleransi">Toleransi Risiko</Label>
+                  <Select value={toleransiRisiko} onValueChange={setToleransiRisiko}>
+                    <SelectTrigger className="mt-2">
+                      <SelectValue placeholder="Pilih toleransi risiko" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="konservatif">Konservatif</SelectItem>
+                      <SelectItem value="sedang">Sedang</SelectItem>
+                      <SelectItem value="agresif">Agresif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* AI Financial Advice dari Backend */}
+        {isGlobalAuthenticated && globalFinancialAdvice && (
+          <Alert className="bg-green-50 border-green-200 mb-6">
+            <FiShield className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              <div className="space-y-2">
+                <p><strong>💰 Strategi Menabung:</strong> {globalFinancialAdvice.saving_strategies}</p>
+                <p><strong>📈 Strategi Investasi:</strong> {globalFinancialAdvice.investment_strategies}</p>
+                <p><strong>🛡️ Strategi Asuransi:</strong> {globalFinancialAdvice.insurance_strategies}</p>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Financial Health Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white border-0 shadow-lg">
@@ -420,8 +607,8 @@ export default function FinancialAdvisorPage() {
                 <div>
                   <Label className="text-sm font-medium text-slate-700 mb-3 block">
                     Toleransi Risiko: {
-                      riskTolerance <= 2 ? "Konservatif" :
-                      riskTolerance <= 4 ? "Moderat" : "Agresif"
+                      toleransiRisiko === "konservatif" ? "Konservatif" :
+                      toleransiRisiko === "sedang" ? "Moderat" : "Agresif"
                     }
                   </Label>
                   <input
@@ -429,8 +616,8 @@ export default function FinancialAdvisorPage() {
                     min={1}
                     max={5}
                     step={1}
-                    value={riskTolerance}
-                    onChange={(e) => setRiskTolerance(Number(e.target.value))}
+                    value={toleransiRisiko === "konservatif" ? 1 : toleransiRisiko === "sedang" ? 3 : 5}
+                    onChange={(e) => setToleransiRisiko(e.target.value === "1" ? "konservatif" : e.target.value === "3" ? "sedang" : "agresif")}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mb-2"
                     aria-label="Toleransi risiko investasi"
                   />
@@ -443,8 +630,8 @@ export default function FinancialAdvisorPage() {
                       Rekomendasi Portofolio
                     </p>
                     <p className="text-xs text-blue-600">
-                      {riskTolerance <= 2 ? "70% Deposito, 30% Reksa Dana" :
-                       riskTolerance <= 4 ? "40% Deposito, 60% Reksa Dana" :
+                      {toleransiRisiko === "konservatif" ? "70% Deposito, 30% Reksa Dana" :
+                       toleransiRisiko === "sedang" ? "40% Deposito, 60% Reksa Dana" :
                        "20% Deposito, 80% Reksa Dana Saham"}
                     </p>
                   </div>

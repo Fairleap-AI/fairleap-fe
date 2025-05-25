@@ -20,7 +20,8 @@ import {
   FiPieChart,
   FiCalendar,
   FiBookOpen,
-  FiActivity
+  FiActivity,
+  FiUser
 } from "react-icons/fi";
 
 // Navigation menu items
@@ -188,7 +189,16 @@ export default function DashboardLayout({ children, title, subtitle, badge }: Da
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-200">
+        <div className="p-4 border-t border-slate-200 space-y-1">
+          <Button
+            variant="ghost"
+            className={`w-full justify-start ${leftSidebarOpen ? 'px-4' : 'px-2'} text-slate-600 hover:text-slate-800 hover:bg-slate-100`}
+            onClick={() => router.push('/dashboard/profile')}
+          >
+            <FiUser className={`h-5 w-5 ${leftSidebarOpen ? 'mr-3' : ''}`} />
+            {leftSidebarOpen && <span>Profile</span>}
+          </Button>
+          
           <Button
             variant="ghost"
             className={`w-full justify-start ${leftSidebarOpen ? 'px-4' : 'px-2'} text-red-600 hover:text-red-700 hover:bg-red-50`}

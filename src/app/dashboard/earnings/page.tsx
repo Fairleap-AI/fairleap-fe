@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,21 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { useDataSync } from "@/context/DataSyncContext";
+import { SyncIndicator } from "@/components/ui/SyncIndicator";
 import {
   FiDollarSign,
   FiClock,
   FiMapPin,
   FiTrendingUp,
   FiTarget,
-  FiActivity
+  FiActivity,
+  FiRefreshCw,
+  FiWifi,
+  FiWifiOff,
+  FiAlertTriangle
 } from "react-icons/fi";
 import {
   LineChart,
@@ -60,32 +68,92 @@ const timeSlots = [
 export default function EarningsCalculatorPage() {
   const [workingHours, setWorkingHours] = useState([8]);
   const [workingDays, setWorkingDays] = useState([6]);
+  const [selectedArea, setSelectedArea] = useState("senayan");
+
+  // Use DataSync context untuk sinkronisasi global
+  const {
+    globalTripStats,
+    isGlobalLoading,
+    globalError,
+    isGlobalAuthenticated,
+    lastSyncTime,
+    refreshData,
+    clearGlobalError
+  } = useDataSync();
+
+  // Load trip data untuk prediksi yang akurat
+  useEffect(() => {
+    if (isGlobalAuthenticated) {
+      refreshData('earnings');
+    }
+  }, [isGlobalAuthenticated, refreshData]);
 
   const calculateEarnings = () => {
-    const baseEarning = 35000; // Base earning per hour
+    let baseEarning = 35000; // Default base earning per hour
+    let efficiency = 0.85; // Default efficiency factor
+    
+    // Use backend data for more accurate predictions if available
+    if (isGlobalAuthenticated && globalTripStats.length > 0) {
+      // Calculate average earning dari globalTripStats
+      const totalEarnings = globalTripStats.reduce((sum, stat) => sum + stat.total_earnings, 0);
+      const totalTrips = globalTripStats.reduce((sum, stat) => sum + stat.total_trips, 0);
+      const avgEarningsPerTrip = totalTrips > 0 ? totalEarnings / totalTrips : 0;
+      
+      baseEarning = avgEarningsPerTrip * 2.5; // Estimate trips per hour
+      efficiency = 0.9; // Higher efficiency with real data
+    }
+
+    const areaMultiplier = areas.find(area => area.value === selectedArea)?.multiplier || 1.0;
     const hoursPerDay = workingHours[0];
     const daysPerWeek = workingDays[0];
     
-    const dailyEarnings = baseEarning * hoursPerDay * 0.85; // efficiency factor
+    const adjustedEarning = baseEarning * areaMultiplier;
+    const dailyEarnings = adjustedEarning * hoursPerDay * efficiency;
     const weeklyEarnings = dailyEarnings * daysPerWeek;
     const monthlyEarnings = weeklyEarnings * 4.3;
+
+    // Calculate confidence based on data availability
+    let confidence = 75; // Base confidence
+    if (isGlobalAuthenticated && globalTripStats.length > 0) {
+      const totalTrips = globalTripStats.reduce((sum, stat) => sum + stat.total_trips, 0);
+      confidence = Math.min(95, 85 + (totalTrips / 100) * 5); // Higher confidence with more trip data
+    }
+    confidence = Math.min(confidence, 75 + (hoursPerDay * 2) + (daysPerWeek * 1.5));
 
     return {
       daily: Math.round(dailyEarnings),
       weekly: Math.round(weeklyEarnings),
       monthly: Math.round(monthlyEarnings),
-      confidence: Math.min(95, 75 + (hoursPerDay * 2) + (daysPerWeek * 1.5))
+      confidence: confidence,
+      dataSource: isGlobalAuthenticated && globalTripStats.length > 0 ? 'Backend Data' : 'Estimation'
     };
   };
 
   const earnings = calculateEarnings();
 
   const generateProjectionData = () => {
-    return Array.from({ length: 30 }, (_, i) => ({
-      day: i + 1,
-      earnings: earnings.daily + (Math.random() - 0.5) * earnings.daily * 0.2,
-      trend: earnings.daily * (1 + (i / 100))
-    }));
+    return Array.from({ length: 30 }, (_, i) => {
+      // Use backend trend if available
+      let baseTrend = 1 + (i / 200); // Default trend
+      if (isGlobalAuthenticated && globalTripStats.length > 7) {
+        // Calculate trend dari recent globalTripStats
+        const recentData = globalTripStats.slice(-7);
+        const earlierData = globalTripStats.slice(-14, -7);
+        
+        if (earlierData.length > 0) {
+          const recentAvg = recentData.reduce((sum, stat) => sum + stat.total_earnings, 0) / recentData.length;
+          const earlierAvg = earlierData.reduce((sum, stat) => sum + stat.total_earnings, 0) / earlierData.length;
+          const growthRate = (recentAvg - earlierAvg) / earlierAvg;
+          baseTrend = 1 + (i * growthRate / 30);
+        }
+      }
+
+      return {
+        day: i + 1,
+        earnings: earnings.daily + (Math.random() - 0.5) * earnings.daily * 0.2,
+        trend: earnings.daily * baseTrend
+      };
+    });
   };
 
   const projectionData = generateProjectionData();
@@ -94,11 +162,65 @@ export default function EarningsCalculatorPage() {
     <DashboardLayout
       title="Earnings Calculator"
       badge={{
-        icon: FiActivity,
+        icon: isGlobalAuthenticated ? FiWifi : FiWifiOff,
         text: `AI Prediction: ${earnings.confidence.toFixed(0)}% Accurate`
       }}
     >
       <div className="p-6">
+        {/* Global Sync Indicator */}
+        <SyncIndicator pageType="earnings" showDetails={false} />
+
+        {/* Enhanced Prediction Alert */}
+        {isGlobalAuthenticated && (
+          <Alert className="bg-green-50 border-green-200 mb-6">
+            <FiTrendingUp className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              <strong>Enhanced Prediction:</strong> Menggunakan data {earnings.dataSource} untuk akurasi {earnings.confidence.toFixed(0)}%.
+              {globalTripStats.length > 0 && (
+                <span className="ml-2">Berdasarkan {globalTripStats.reduce((sum, stat) => sum + stat.total_trips, 0)} trips historical.</span>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Connection Status Alert */}
+        {!isGlobalAuthenticated && (
+          <Alert className="bg-amber-50 border-amber-200 mb-6">
+            <FiWifiOff className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Offline Mode:</strong> Prediksi berdasarkan estimasi. Login untuk prediksi AI yang lebih akurat berdasarkan data historical Anda.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Alert */}
+        {globalError && (
+          <Alert className="bg-red-50 border-red-200 mb-6">
+            <FiAlertTriangle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800 flex items-center justify-between">
+              <span><strong>Error:</strong> {globalError}</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearGlobalError}
+                className="ml-2"
+              >
+                Dismiss
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Loading indicator */}
+        {isGlobalLoading && (
+          <Alert className="bg-blue-50 border-blue-200 mb-6">
+            <FiRefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
+            <AlertDescription className="text-blue-800">
+              <strong>Loading:</strong> Mengambil data trip untuk prediksi yang lebih akurat...
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Calculator Form */}
           <div className="lg:col-span-1 space-y-6">
@@ -146,6 +268,28 @@ export default function EarningsCalculatorPage() {
                     <span>1 hari</span>
                     <span>7 hari</span>
                   </div>
+                </div>
+
+                {/* Area Selection */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-slate-700">
+                    Area Operasi
+                  </Label>
+                  <Select value={selectedArea} onValueChange={setSelectedArea}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Pilih area" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {areas.map((area) => (
+                        <SelectItem key={area.value} value={area.value}>
+                          {area.label} ({(area.multiplier * 100).toFixed(0)}%)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-slate-500">
+                    Multiplier: {((areas.find(a => a.value === selectedArea)?.multiplier || 1) * 100).toFixed(0)}%
+                  </p>
                 </div>
               </CardContent>
             </Card>
