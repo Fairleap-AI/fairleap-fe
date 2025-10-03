@@ -40,13 +40,13 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://fairleap.ai"),
+  metadataBase: new URL("https://fairleap.cloud"),
   openGraph: {
     title:
       "FairLeapAI - Empowering Gojek Drivers with Smarter Earnings & Real-Time Support",
     description:
       "Empowers Gojek drivers with AI-driven earnings forecasts, welfare support, and personalized insights.",
-    url: "https://fairleap.ai",
+    url: "https://fairleap.cloud",
     siteName: "FairLeapAI",
     images: [
       {

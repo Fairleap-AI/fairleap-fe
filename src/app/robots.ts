@@ -5,9 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/private/", "/api/"],
     },
-    sitemap: "https://fairleap.ai/sitemap.xml",
-    host: "https://fairleap.ai",
+    sitemap: "https://fairleap.cloud/sitemap.xml",
+    host: "https://fairleap.cloud",
   };
 }
