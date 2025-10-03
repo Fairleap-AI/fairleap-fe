@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
+  output: 'export',
+  images: { unoptimized: true }
 };
 
 export default nextConfig;
