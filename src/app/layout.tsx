@@ -4,6 +4,7 @@ import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 import { DataSyncProvider } from "@/context/DataSyncContext";
 import { DataIntegrationProvider } from "@/providers/DataIntegrationProvider";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -118,6 +119,12 @@ export default function RootLayout({
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
+        />
+        <Script
+          src="https://stat.faizath.com/script.js"
+          data-website-id={process.env.NEXT_PUBLIC_UMAMI_ID}
+          data-domains={process.env.NEXT_PUBLIC_UMAMI_DOMAINS}
+          strategy="afterInteractive"
         />
       </head>
       <body
