@@ -1,6 +1,7 @@
 import React from "react";
 import LandingHeader from "./LandingHeader";
 import LandingFooter from "./LandingFooter";
+import DomainMigrationNotice from "./DomainMigrationNotice";
 import HeroSection from "./sections/HeroSection";
 import ProblemStatementSection from "./sections/ProblemStatementSection";
 import SolutionShowcaseSection from "./sections/SolutionShowcaseSection";
@@ -14,6 +15,7 @@ import CallToActionSection from "./sections/CallToActionSection";
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
+      <DomainMigrationNotice />
       <LandingHeader />
       <main>
         <HeroSection />
