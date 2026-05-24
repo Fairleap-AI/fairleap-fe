@@ -112,6 +112,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=${JSON.stringify(process.env.NEXT_PUBLIC_WEB_URL || "")};if(!t)return;var u=new URL(t);var h=window.location.hostname;if(h==="localhost"||h==="127.0.0.1"||h==="0.0.0.0")return;if(window.location.origin!==u.origin){window.location.replace(u.origin+window.location.pathname+window.location.search+window.location.hash);}}catch(e){}})();`,
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://maps.googleapis.com" />

@@ -1,5 +1,5 @@
 // API Service untuk Fairleap Backend Integration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.fairleap.cloud';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://fairleap-api.faizath.com';
 
 // Types untuk API responses
 export interface ApiResponse<T = any> {
