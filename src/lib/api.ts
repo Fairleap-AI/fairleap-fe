@@ -1,4 +1,4 @@
-const BASE_URL = "https://api.fairleap.cloud";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://fairleap-api.faizath.com";
 
 export interface ApiResponse<T = any> {
   status: "success" | "error";

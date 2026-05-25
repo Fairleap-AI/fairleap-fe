@@ -8,7 +8,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://fairleap.cloud/sitemap.xml",
-    host: "https://fairleap.cloud",
+    sitemap: "https://fairleap.faizath.com/sitemap.xml",
+    host: "https://fairleap.faizath.com",
   };
 }
