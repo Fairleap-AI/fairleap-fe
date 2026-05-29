@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   FiPlay,
-  FiMonitor,
   FiSearch,
   FiHeart,
   FiMessageCircle,
@@ -57,6 +56,26 @@ export default function LiveDemonstrationSection() {
   const featureIconsRefs = useRef<(HTMLDivElement | null)[]>([]);
   const featureImagesRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [animationCompleted, setAnimationCompleted] = useState(false);
+  const [isVideoStarted, setIsVideoStarted] = useState(false);
+  const videoElementRef = useRef<HTMLVideoElement>(null);
+
+  const DEMO_VIDEO_URL = "https://fairleap-cdn.faizath.com/video.mp4";
+
+  const handlePlayVideo = () => {
+    setIsVideoStarted(true);
+    videoElementRef.current?.play().catch(() => {
+      /* Autoplay can be blocked; native controls let the user start it manually */
+    });
+  };
+
+  const handleVideoEnded = () => {
+    const video = videoElementRef.current;
+    if (video) {
+      video.currentTime = 0;
+    }
+    // Return to the initial unstarted state so the play button reappears
+    setIsVideoStarted(false);
+  };
 
   const demoFeatures = [
     {
@@ -325,26 +344,38 @@ export default function LiveDemonstrationSection() {
             className="bg-white/90 backdrop-blur-lg border-white/60 shadow-xl overflow-hidden"
           >
             <CardContent className="p-8">
-              <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center relative">
-                <div ref={demoContentRef} className="text-center">
-                  <div 
-                    ref={demoIconRef}
-                    className="bg-white/80 backdrop-blur-sm rounded-full p-6 mb-6 inline-flex shadow-lg"
+              <div
+                ref={demoContentRef}
+                className="aspect-video bg-black rounded-xl flex items-center justify-center relative overflow-hidden"
+              >
+                <video
+                  ref={videoElementRef}
+                  src={DEMO_VIDEO_URL}
+                  controls={isVideoStarted}
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 w-full h-full object-contain bg-black rounded-xl"
+                  onPlay={() => setIsVideoStarted(true)}
+                  onEnded={handleVideoEnded}
+                >
+                  Your browser does not support the video tag.
+                </video>
+
+                {!isVideoStarted && (
+                  <button
+                    type="button"
+                    aria-label="Play demo video"
+                    onClick={handlePlayVideo}
+                    className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/40 transition-colors duration-300 group"
                   >
-                    <FiMonitor className="w-12 h-12 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-4">Interactive Demo Coming Soon</h3>
-                  <p className="text-slate-600 mb-6">
-                    Experience the full power of FairLeap AI with our interactive demonstration
-                  </p>
-                  <Button
-                    size="lg"
-                    className="bg-primary hover:bg-primary/90 shadow-lg"
-                  >
-                    <FiPlay className="mr-2" size={20} />
-                    Watch Demo Video
-                  </Button>
-                </div>
+                    <div
+                      ref={demoIconRef}
+                      className="bg-white/90 backdrop-blur-sm rounded-full p-6 inline-flex shadow-xl transition-transform duration-300 group-hover:scale-110"
+                    >
+                      <FiPlay className="w-12 h-12 text-primary translate-x-0.5" />
+                    </div>
+                  </button>
+                )}
               </div>
             </CardContent>
           </Card>
